@@ -231,4 +231,17 @@
   .dark .right-sidebar {
     scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
   }
+
+  /* Adding elevated dark theme glassmorphic styles */
+  .dark-glass {
+    background: rgba(26, 31, 38, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .dark-card-elevated {
+    background: rgba(15, 20, 25, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
 }

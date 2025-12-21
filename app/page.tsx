@@ -8,6 +8,8 @@ import { whoEvents } from "@/lib/who-data"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
+import { ExportSection } from "@/components/export-section"
+import type { MapboxMapRef } from "@/components/mapbox-map"
 
 export default function DashboardPage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
@@ -17,7 +19,8 @@ export default function DashboardPage() {
   const [selectedYear, setSelectedYear] = useState<number>(2025)
   const [alerts, setAlerts] = useState<any[]>([])
   const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
-  const mapRef = useRef<any>(null)
+  const mapRef = useRef<MapboxMapRef>(null)
+  const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
 
   // Extract unique values
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
@@ -98,6 +101,14 @@ export default function DashboardPage() {
 
   const handleAlertJumpToLocation = (countries: string[]) => {
     setSelectedCountries(countries)
+  }
+
+  const handleEventClick = (event: any) => {
+    if (mapRef.current) {
+      mapRef.current.flyToLocation(event.lat, event.lon, 14)
+      setSelectedMapEvent(event)
+      setSelectedCountries([event.country])
+    }
   }
 
   const tickerEvents = useMemo(() => {
@@ -246,6 +257,14 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Export Section */}
+        <div className="mt-4">
+          <ExportSection
+            events={filteredEvents}
+            filters={{ selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear }}
+          />
+        </div>
       </aside>
 
       {/* Main Content */}
@@ -308,7 +327,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden h-[calc(100vh-280px)] min-h-[600px]">
-            <MapboxMap events={filteredEvents} />
+            <MapboxMap ref={mapRef} events={filteredEvents} selectedEvent={selectedMapEvent} />
           </div>
         </div>
       </main>
@@ -320,7 +339,11 @@ export default function DashboardPage() {
         </h3>
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
           {filteredEvents.slice(0, 20).map((event, idx) => (
-            <div key={event.id} className="pb-3 border-b border-[#d1d9e6] last:border-none">
+            <div
+              key={event.id}
+              onClick={() => handleEventClick(event)}
+              className="pb-3 border-b border-[#d1d9e6] last:border-none cursor-pointer hover:bg-white/50 rounded-lg p-2 transition-all hover:shadow-md"
+            >
               <div className="flex items-start gap-2 mb-1">
                 <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-[#009edb] to-[#0056b3] flex items-center justify-center text-white text-[10px] font-bold">
                   {idx + 1}

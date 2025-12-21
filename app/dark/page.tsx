@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
 import { whoEvents } from "@/lib/who-data"
-import { AIMonitoringPanel } from "@/components/ai-monitoring-panel"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ExportSection } from "@/components/export-section"
+import AIChatbot from "@/components/ai-chatbot" // Import AIChatbot
+import type { MapboxMapRef } from "@/components/mapbox-map"
 
 export default function DarkThemePage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
@@ -16,6 +18,9 @@ export default function DarkThemePage() {
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(2025)
   const [alerts, setAlerts] = useState<any[]>([])
+  const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
+  const mapRef = useRef<MapboxMapRef>(null)
+  const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
   const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [])
@@ -52,12 +57,25 @@ export default function DarkThemePage() {
     )
   }
 
-  const handleAlertGenerated = (alert: any) => {
-    setAlerts((prev) => [...prev, alert])
-  }
-
   const handleDismissAlert = (alertId: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId))
+  }
+
+  const handleAlertViewDetails = (alert: any) => {
+    setSelectedAlertCountries(alert.affectedCountries)
+    document.querySelector(".right-sidebar")?.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleAlertJumpToLocation = (countries: string[]) => {
+    setSelectedCountries(countries)
+  }
+
+  const handleEventClick = (event: any) => {
+    if (mapRef.current) {
+      mapRef.current.flyToLocation(event.lat, event.lon, 14)
+      setSelectedMapEvent(event)
+      setSelectedCountries([event.country])
+    }
   }
 
   const tickerEvents = useMemo(() => {
@@ -74,20 +92,30 @@ export default function DarkThemePage() {
     return `LIVE UPDATES: ${combined}  •  ${combined}`
   }, [tickerEvents])
 
+  const handleAlertGenerated = (alert: any) => {
+    setAlerts((prev) => [...prev, alert])
+  }
+
   return (
     <div className="min-h-screen bg-[#0f1419] font-sans">
       {alerts.map((alert) => (
-        <AIAlertPopup key={alert.id} alert={alert} onDismiss={() => handleDismissAlert(alert.id)} />
+        <AIAlertPopup
+          key={alert.id}
+          alert={alert}
+          onDismiss={() => handleDismissAlert(alert.id)}
+          onViewDetails={handleAlertViewDetails}
+          onJumpToLocation={handleAlertJumpToLocation}
+        />
       ))}
 
-      {/* Left Sidebar */}
-      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#1a1f26] rounded-2xl shadow-xl p-4 overflow-y-auto z-20">
-        <div className="mb-4">
-          <AIMonitoringPanel events={filteredEvents} onAlertGenerated={handleAlertGenerated} />
-        </div>
+      <AIChatbot events={filteredEvents} />
 
+      {/* Left Sidebar */}
+      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-y-auto z-20 border border-white/10">
         <div className="mb-3">
-          <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2">🎛️ Filter by Grade</h3>
+          <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2 flex items-center gap-2">
+            <span className="text-base">🎛️</span> Filter by Grade
+          </h3>
           <div className="space-y-1.5">
             {uniqueGrades.map((grade) => (
               <div key={grade} className="flex items-center space-x-2">
@@ -95,7 +123,7 @@ export default function DarkThemePage() {
                   id={`grade-${grade}`}
                   checked={selectedGrades.includes(grade)}
                   onCheckedChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
-                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
+                  className="data-[state=checked]:bg-[#3b82f6] data-[state=checked]:shadow-[0_0_10px_rgba(59,130,246,0.5)] border-[#334155]"
                 />
                 <Label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {grade}
@@ -181,41 +209,52 @@ export default function DarkThemePage() {
         </div>
 
         {/* Grade Summary */}
-        <div>
-          <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2">📊 Grade Summary</h3>
+        <div className="mb-4">
+          <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2 flex items-center gap-2">
+            <span className="text-base">📊</span> Grade Summary
+          </h3>
           <div className="space-y-1.5">
-            <div className="flex justify-between items-center px-2.5 py-1.5 bg-[#0f1419] rounded-lg border-l-[3px] border-[#ff3355]">
-              <span className="text-[10px] text-[#94a3b8]">Grade 3</span>
-              <span className="text-base font-bold text-[#e2e8f0]">{gradeSummary.g3}</span>
+            <div className="flex justify-between items-center px-2.5 py-2 dark-card-elevated rounded-lg border-l-[3px] border-[#ff3355] hover:shadow-[0_0_15px_rgba(255,51,85,0.3)] transition-all">
+              <span className="text-[10px] text-[#94a3b8] font-semibold">Grade 3</span>
+              <span className="text-base font-bold text-[#ff3355]">{gradeSummary.g3}</span>
             </div>
-            <div className="flex justify-between items-center px-2.5 py-1.5 bg-[#0f1419] rounded-lg border-l-[3px] border-[#ff9933]">
-              <span className="text-[10px] text-[#94a3b8]">Grade 2</span>
-              <span className="text-base font-bold text-[#e2e8f0]">{gradeSummary.g2}</span>
+            <div className="flex justify-between items-center px-2.5 py-2 dark-card-elevated rounded-lg border-l-[3px] border-[#ff9933] hover:shadow-[0_0_15px_rgba(255,153,51,0.3)] transition-all">
+              <span className="text-[10px] text-[#94a3b8] font-semibold">Grade 2</span>
+              <span className="text-base font-bold text-[#ff9933]">{gradeSummary.g2}</span>
             </div>
-            <div className="flex justify-between items-center px-2.5 py-1.5 bg-[#0f1419] rounded-lg border-l-[3px] border-[#ffcc00]">
-              <span className="text-[10px] text-[#94a3b8]">Grade 1</span>
-              <span className="text-base font-bold text-[#e2e8f0]">{gradeSummary.g1}</span>
+            <div className="flex justify-between items-center px-2.5 py-2 dark-card-elevated rounded-lg border-l-[3px] border-[#ffcc00] hover:shadow-[0_0_15px_rgba(255,204,0,0.3)] transition-all">
+              <span className="text-[10px] text-[#94a3b8] font-semibold">Grade 1</span>
+              <span className="text-base font-bold text-[#ffcc00]">{gradeSummary.g1}</span>
             </div>
-            <div className="flex justify-between items-center px-2.5 py-1.5 bg-[#0f1419] rounded-lg border-l-[3px] border-[#64748b]">
-              <span className="text-[10px] text-[#94a3b8]">Ungraded</span>
-              <span className="text-base font-bold text-[#e2e8f0]">{gradeSummary.gu}</span>
+            <div className="flex justify-between items-center px-2.5 py-2 dark-card-elevated rounded-lg border-l-[3px] border-[#64748b] hover:shadow-[0_0_15px_rgba(100,116,139,0.3)] transition-all">
+              <span className="text-[10px] text-[#94a3b8] font-semibold">Ungraded</span>
+              <span className="text-base font-bold text-[#64748b]">{gradeSummary.gu}</span>
             </div>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <ExportSection
+            events={filteredEvents}
+            filters={{ selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear }}
+            isDark={true}
+          />
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="ml-[300px] mr-[300px] p-2.5">
         {/* Header */}
-        <header className="bg-[#1a1f26] rounded-2xl shadow-xl p-3 mb-3 flex items-center justify-between">
+        <header className="dark-glass rounded-2xl shadow-2xl p-3 mb-3 flex items-center justify-between border border-white/10">
           <div>
-            <h1 className="text-lg font-bold text-[#e2e8f0]">🌍 WHO Signal Intelligence Dashboard</h1>
+            <h1 className="text-lg font-bold text-[#e2e8f0] flex items-center gap-2">
+              <span className="text-xl">🌍</span> WHO Signal Intelligence Dashboard
+            </h1>
             <p className="text-[11px] text-[#94a3b8]">Live tracking of graded events in the African region</p>
           </div>
           <div className="flex items-center gap-3">
-            {/* Theme Toggle Button */}
             <ThemeToggle isDark={true} />
-            <span className="px-2.5 py-1 bg-gradient-to-r from-[#00c853] to-[#00e676] text-white text-[10px] font-semibold rounded-xl shadow-md">
+            <span className="px-2.5 py-1 bg-gradient-to-r from-[#00c853] to-[#00e676] text-white text-[10px] font-semibold rounded-xl shadow-[0_0_15px_rgba(0,200,83,0.5)] animate-pulse">
               ● LIVE
             </span>
           </div>
@@ -227,59 +266,79 @@ export default function DarkThemePage() {
 
         {/* Metrics */}
         <div className="grid grid-cols-4 gap-3 mb-3">
-          <div className="bg-[#1a1f26] rounded-2xl shadow-xl p-4 text-center">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight">{filteredEvents.length}</div>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+              {filteredEvents.length}
+            </div>
             <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Total Events</div>
           </div>
-          <div className="bg-[#1a1f26] rounded-2xl shadow-xl p-4 text-center">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight">{newCount}</div>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+              {newCount}
+            </div>
             <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">New Events</div>
           </div>
-          <div className="bg-[#1a1f26] rounded-2xl shadow-xl p-4 text-center">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight">{ongoingCount}</div>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+              {ongoingCount}
+            </div>
             <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Ongoing</div>
           </div>
-          <div className="bg-[#1a1f26] rounded-2xl shadow-xl p-4 text-center">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight">{outbreakCount}</div>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+              {outbreakCount}
+            </div>
             <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Outbreaks</div>
           </div>
         </div>
 
         {/* Map */}
-        <div className="bg-[#1a1f26] rounded-2xl shadow-xl p-4">
+        <div className="dark-glass rounded-2xl shadow-2xl p-4 border border-white/10">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xs font-semibold text-[#3b82f6] uppercase tracking-wide">📍 Event Distribution</h2>
+            <h2 className="text-xs font-semibold text-[#3b82f6] uppercase tracking-wide flex items-center gap-2">
+              <span className="text-base">📍</span> Event Distribution
+            </h2>
             <div className="flex gap-3">
               <div className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff3355]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#ff3355] shadow-[0_0_8px_rgba(255,51,85,0.6)]" />
                 Grade 3
               </div>
               <div className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff9933]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#ff9933] shadow-[0_0_8px_rgba(255,153,51,0.6)]" />
                 Grade 2
               </div>
               <div className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ffcc00]" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#ffcc00] shadow-[0_0_8px_rgba(255,204,0,0.6)]" />
                 Grade 1
               </div>
             </div>
           </div>
           <div className="rounded-2xl overflow-hidden h-[calc(100vh-280px)] min-h-[600px]">
-            <MapboxMap events={filteredEvents} mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf" />
+            <MapboxMap
+              ref={mapRef}
+              events={filteredEvents}
+              mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf"
+              selectedEvent={selectedMapEvent}
+              setSelectedEvent={setSelectedMapEvent}
+            />
           </div>
         </div>
       </main>
 
       {/* Right Sidebar - Signal Feed */}
-      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#1a1f26] rounded-2xl shadow-xl p-4 overflow-hidden flex flex-col z-20">
-        <h3 className="text-xs font-bold text-[#3b82f6] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#334155]">
-          📡 Recent Signals
+      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-hidden flex flex-col z-20 right-sidebar border border-white/10">
+        <h3 className="text-xs font-bold text-[#3b82f6] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#334155] flex items-center gap-2">
+          <span className="text-base">📡</span> Recent Signals
         </h3>
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
           {filteredEvents.slice(0, 20).map((event, idx) => (
-            <div key={event.id} className="pb-3 border-b border-[#334155] last:border-none">
+            <div
+              key={event.id}
+              onClick={() => handleEventClick(event)}
+              className="pb-3 border-b border-[#334155] last:border-none cursor-pointer hover:bg-[#0f1419]/50 rounded-lg p-2 transition-all hover:shadow-[0_0_15px_rgba(59,130,246,0.2)] hover:border-[#3b82f6]/30 border border-transparent"
+            >
               <div className="flex items-start gap-2 mb-1">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#1e40af] flex items-center justify-center text-white text-[10px] font-bold">
+                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#1e40af] flex items-center justify-center text-white text-[10px] font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)]">
                   {idx + 1}
                 </div>
                 <span className="text-[11px] font-semibold text-[#3b82f6] uppercase">{event.country}</span>
@@ -292,11 +351,11 @@ export default function DarkThemePage() {
               <div
                 className={`ml-7 inline-block text-[9px] px-2 py-0.5 rounded ${
                   event.grade === "Grade 3"
-                    ? "bg-[#ff3355]/20 text-[#ff3355]"
+                    ? "bg-[#ff3355]/20 text-[#ff3355] shadow-[0_0_8px_rgba(255,51,85,0.3)]"
                     : event.grade === "Grade 2"
-                      ? "bg-[#ff9933]/20 text-[#ff9933]"
+                      ? "bg-[#ff9933]/20 text-[#ff9933] shadow-[0_0_8px_rgba(255,153,51,0.3)]"
                       : event.grade === "Grade 1"
-                        ? "bg-[#ffcc00]/20 text-[#ffcc00]"
+                        ? "bg-[#ffcc00]/20 text-[#ffcc00] shadow-[0_0_8px_rgba(255,204,0,0.3)]"
                         : "bg-[#64748b]/20 text-[#94a3b8]"
                 }`}
               >

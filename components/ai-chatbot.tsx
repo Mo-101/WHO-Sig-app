@@ -173,3 +173,5 @@ export function AIChatbot({ events }: AIChatbotProps) {
     </>
   )
 }
+
+export default AIChatbot
