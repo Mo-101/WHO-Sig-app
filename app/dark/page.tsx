@@ -97,7 +97,7 @@ export default function DarkThemePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f1419] font-sans">
+    <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
       {alerts.map((alert) => (
         <AIAlertPopup
           key={alert.id}
@@ -111,7 +111,7 @@ export default function DarkThemePage() {
       <AIChatbot events={filteredEvents} />
 
       {/* Left Sidebar */}
-      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-y-auto z-20 border border-white/10">
+      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-y-auto z-20 border border-white/10 custom-scrollbar-dark">
         <div className="mb-3">
           <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2 flex items-center gap-2">
             <span className="text-base">🎛️</span> Filter by Grade
@@ -243,7 +243,7 @@ export default function DarkThemePage() {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-[300px] mr-[300px] p-2.5">
+      <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
         {/* Header */}
         <header className="dark-glass rounded-2xl shadow-2xl p-3 mb-3 flex items-center justify-between border border-white/10">
           <div>
@@ -293,7 +293,7 @@ export default function DarkThemePage() {
         </div>
 
         {/* Map */}
-        <div className="dark-glass rounded-2xl shadow-2xl p-4 border border-white/10">
+        <div className="dark-glass rounded-2xl shadow-2xl p-4 border border-white/10 flex-1">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-xs font-semibold text-[#3b82f6] uppercase tracking-wide flex items-center gap-2">
               <span className="text-base">📍</span> Event Distribution
@@ -313,7 +313,7 @@ export default function DarkThemePage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden h-[calc(100vh-280px)] min-h-[600px]">
+          <div className="rounded-2xl overflow-hidden h-full">
             <MapboxMap
               ref={mapRef}
               events={filteredEvents}
@@ -326,7 +326,7 @@ export default function DarkThemePage() {
       </main>
 
       {/* Right Sidebar - Signal Feed */}
-      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-hidden flex flex-col z-20 right-sidebar border border-white/10">
+      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-hidden flex flex-col z-20 right-sidebar border border-white/10 custom-scrollbar-dark">
         <h3 className="text-xs font-bold text-[#3b82f6] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#334155] flex items-center gap-2">
           <span className="text-base">📡</span> Recent Signals
         </h3>

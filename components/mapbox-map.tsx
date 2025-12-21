@@ -45,9 +45,18 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         try {
           const token = await getMapboxToken()
 
-          if (!token || token.trim() === "" || token === "undefined" || token === "null" || token.length < 20) {
-            console.error("[v0] Invalid Mapbox token received")
-            setError("Mapbox token not configured. Add MAPBOX_ACCESS_TOKEN to your environment variables.")
+          if (
+            !token ||
+            token.trim() === "" ||
+            token === "undefined" ||
+            token === "null" ||
+            token.length < 20 ||
+            !token.startsWith("pk.")
+          ) {
+            console.error("[v0] Invalid Mapbox token received:", token ? "Token format invalid" : "Token missing")
+            setError(
+              "Mapbox token not configured properly. Please add a valid MAPBOX_ACCESS_TOKEN to your environment variables.",
+            )
             return
           }
 
@@ -65,18 +74,21 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             })
 
             map.current.on("load", () => {
-              console.log("[v0] Map loaded successfully")
               setMapLoaded(true)
             })
 
             map.current.on("error", (e: any) => {
               console.error("[v0] Mapbox error:", e)
-              setError("Failed to load map. Please check your Mapbox token is valid.")
+              if (e.error && e.error.message && e.error.message.includes("token")) {
+                setError("Invalid Mapbox token. Please verify your MAPBOX_ACCESS_TOKEN is correct.")
+              } else {
+                setError("Failed to load map. Please check your network connection and Mapbox token.")
+              }
             })
           }
         } catch (err) {
           console.error("[v0] Map initialization error:", err)
-          setError("Failed to initialize map")
+          setError("Failed to initialize map. Please ensure MAPBOX_ACCESS_TOKEN is properly configured.")
         }
       }
 

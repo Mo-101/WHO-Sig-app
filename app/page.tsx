@@ -126,7 +126,7 @@ export default function DashboardPage() {
   }, [tickerEvents])
 
   return (
-    <div className="min-h-screen bg-[#e8eef5] font-sans">
+    <div className="h-screen bg-[#e8eef5] font-sans overflow-hidden">
       {alerts.map((alert) => (
         <AIAlertPopup
           key={alert.id}
@@ -140,7 +140,7 @@ export default function DashboardPage() {
       <AIChatbot events={filteredEvents} />
 
       {/* Left Sidebar */}
-      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-y-auto z-20">
+      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-y-auto z-20 custom-scrollbar">
         <div className="mb-4">
           <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-2">🎛️ Filter by Grade</h3>
           <div className="space-y-1.5">
@@ -268,7 +268,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-[300px] mr-[300px] p-2.5">
+      <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
         {/* Header */}
         <header className="bg-[#e8eef5] rounded-2xl neu-shadow p-3 mb-3 flex items-center justify-between">
           <div>
@@ -338,7 +338,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Right Sidebar - Signal Feed */}
-      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-hidden flex flex-col z-20 right-sidebar">
+      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
         <h3 className="text-xs font-bold text-[#0056b3] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#d1d9e6]">
           📡 Recent Signals
         </h3>
