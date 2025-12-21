@@ -5,9 +5,9 @@ This folder contains the complete Streamlit application that you can run locally
 ## Installation
 
 1. Install required packages:
-```bash
+\`\`\`bash
 pip install streamlit pandas pydeck plotly
-```
+\`\`\`
 
 2. Get your Mapbox token (optional, for better maps):
    - Sign up at https://account.mapbox.com/
@@ -17,14 +17,14 @@ pip install streamlit pandas pydeck plotly
 ## Running the App
 
 ### Light Theme (Neumorphic Design)
-```bash
+\`\`\`bash
 streamlit run scripts/streamlit_app_light.py
-```
+\`\`\`
 
 ### Dark Theme
-```bash
+\`\`\`bash
 streamlit run scripts/streamlit_app_dark.py
-```
+\`\`\`
 
 ## Data Source
 
@@ -42,18 +42,18 @@ The app loads data from a Google Sheets CSV export. The expected columns are:
 
 ### Update Data Source
 Edit the `load_data()` function in the app file:
-```python
+\`\`\`python
 url = "YOUR_GOOGLE_SHEETS_CSV_URL"
-```
+\`\`\`
 
 ### Modify Styling
 All CSS is in the `st.markdown()` block at the top of each app file.
 
 ### Change Map Style
 In the pydeck chart configuration:
-```python
+\`\`\`python
 map_style='mapbox://styles/mapbox/light-v11'  # or 'dark-v11', 'streets-v11', etc.
-```
+\`\`\`
 
 ## Features
 

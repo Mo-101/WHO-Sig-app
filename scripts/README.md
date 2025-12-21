@@ -19,9 +19,9 @@ This directory contains a complete Streamlit application that matches the Next.j
 ## Installation
 
 1. Install required packages:
-```bash
+\`\`\`bash
 pip install -r requirements.txt
-```
+\`\`\`
 
 2. Set up Mapbox token (optional for better maps):
    - Create a `.streamlit/secrets.toml` file in your project root
@@ -31,9 +31,9 @@ pip install -r requirements.txt
 ## Usage
 
 Run the application:
-```bash
+\`\`\`bash
 streamlit run app.py
-```
+\`\`\`
 
 The dashboard will open in your browser at http://localhost:8501
 
@@ -41,14 +41,14 @@ The dashboard will open in your browser at http://localhost:8501
 
 ### Data Source
 Replace the `load_data()` function in app.py with your actual data source:
-```python
+\`\`\`python
 @st.cache_data(ttl=1800)
 def load_data():
     # Replace this URL with your data source
     url = "your_google_sheets_csv_url_or_api_endpoint"
     df = pd.read_csv(url)
     return df
-```
+\`\`\`
 
 ### Expected Data Structure
 Your data should include these columns:
