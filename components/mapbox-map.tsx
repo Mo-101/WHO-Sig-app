@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
+import { getMapboxToken } from "@/lib/mapbox-config"
 
 interface Event {
   id: string
@@ -34,12 +35,12 @@ export default function MapboxMap({ events }: MapboxMapProps) {
 
     const initMap = async () => {
       try {
-        const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+        const token = await getMapboxToken()
 
         // Check if token exists and is a valid string (not empty, not 'undefined' string)
         if (!token || token.trim() === "" || token === "undefined" || token.length < 20) {
           console.error("[v0] Invalid Mapbox token:", token)
-          setError("Mapbox token not configured. Add NEXT_PUBLIC_MAPBOX_TOKEN to your environment variables.")
+          setError("Mapbox token not configured. Add MAPBOX_ACCESS_TOKEN to your environment variables.")
           return
         }
 
@@ -63,7 +64,7 @@ export default function MapboxMap({ events }: MapboxMapProps) {
 
           map.current.on("error", (e: any) => {
             console.error("[v0] Mapbox error:", e)
-            setError("Failed to load map. Please check your Mapbox token is valid.")
+            setError("Failed to load map. Please check your Mapbox key is valid.")
           })
         }
       } catch (err) {
@@ -154,7 +155,7 @@ export default function MapboxMap({ events }: MapboxMapProps) {
             <p className="font-mono text-[#6a7a94] mb-2">Add your Mapbox token:</p>
             <ol className="list-decimal list-inside space-y-1 text-[#6a7a94]">
               <li>Click "Vars" in the left sidebar</li>
-              <li>Add NEXT_PUBLIC_MAPBOX_TOKEN</li>
+              <li>Add MAPBOX_ACCESS_TOKEN</li>
               <li>Get a free token at mapbox.com</li>
             </ol>
           </div>

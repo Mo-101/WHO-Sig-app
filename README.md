@@ -28,3 +28,11 @@ Continue building your app on:
 2. Deploy your chats from the v0 interface
 3. Changes are automatically pushed to this repository
 4. Vercel deploys the latest version from this repository
+
+## Environment Variables
+
+This project requires the following environment variable to be set in your Vercel project:
+
+- `MAPBOX_ACCESS_TOKEN` - Your Mapbox access token (get one free at [mapbox.com](https://mapbox.com))
+
+**Important:** This variable should be set as a **server-side only** environment variable (without the `NEXT_PUBLIC_` prefix) for security. Add this variable in the **Vars** section of the v0 sidebar or in your Vercel project settings.
