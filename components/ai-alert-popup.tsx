@@ -20,14 +20,40 @@ interface AIAlert {
 interface AIAlertPopupProps {
   alert: AIAlert
   onDismiss: () => void
+  onViewDetails?: (alert: AIAlert) => void
+  onJumpToLocation?: (countries: string[]) => void
 }
 
-export function AIAlertPopup({ alert, onDismiss }: AIAlertPopupProps) {
+export function AIAlertPopup({ alert, onDismiss, onViewDetails, onJumpToLocation }: AIAlertPopupProps) {
   const [isVisible, setIsVisible] = useState(false)
+  const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     setIsVisible(true)
+
+    const timer = setTimeout(() => {
+      handleClose()
+    }, 10000)
+
+    setAutoCloseTimer(timer)
+
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
   }, [])
+
+  const handleClose = () => {
+    if (autoCloseTimer) clearTimeout(autoCloseTimer)
+    setIsVisible(false)
+    setTimeout(onDismiss, 300)
+  }
+
+  const handleAlertClick = () => {
+    if (autoCloseTimer) clearTimeout(autoCloseTimer)
+    onViewDetails?.(alert)
+    onJumpToLocation?.(alert.affectedCountries)
+    handleClose()
+  }
 
   const alertColors = {
     critical: {
@@ -64,7 +90,8 @@ export function AIAlertPopup({ alert, onDismiss }: AIAlertPopupProps) {
 
   return (
     <div
-      className={`fixed top-20 right-6 z-50 w-96 rounded-lg border-l-4 ${colors.border} ${colors.bg} shadow-2xl transform transition-all duration-300 ${
+      onClick={handleAlertClick}
+      className={`fixed top-20 right-6 z-50 w-96 rounded-lg border-l-4 ${colors.border} ${colors.bg} shadow-2xl transform transition-all duration-300 cursor-pointer hover:shadow-3xl hover:scale-105 ${
         isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
       }`}
     >
@@ -84,9 +111,9 @@ export function AIAlertPopup({ alert, onDismiss }: AIAlertPopupProps) {
             </div>
           </div>
           <button
-            onClick={() => {
-              setIsVisible(false)
-              setTimeout(onDismiss, 300)
+            onClick={(e) => {
+              e.stopPropagation()
+              handleClose()
             }}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -155,15 +182,22 @@ export function AIAlertPopup({ alert, onDismiss }: AIAlertPopupProps) {
           </div>
         )}
 
+        {/* Click Instruction */}
+        <div className="bg-white bg-opacity-70 rounded p-2 mt-3 border border-dashed border-gray-300">
+          <p className="text-xs text-gray-600 text-center font-medium">
+            Click anywhere to view details and jump to map location
+          </p>
+        </div>
+
         {/* Actions */}
         <div className="flex gap-2">
           <button className="flex-1 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium py-1.5 px-3 rounded border border-gray-300 transition-colors">
             View Details
           </button>
           <button
-            onClick={() => {
-              setIsVisible(false)
-              setTimeout(onDismiss, 300)
+            onClick={(e) => {
+              e.stopPropagation()
+              handleClose()
             }}
             className="flex-1 bg-gray-700 hover:bg-gray-800 text-white text-xs font-medium py-1.5 px-3 rounded transition-colors"
           >

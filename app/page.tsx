@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
 import { whoEvents } from "@/lib/who-data"
-import { AIMonitoringPanel } from "@/components/ai-monitoring-panel"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { AIChatbot } from "@/components/ai-chatbot"
 
 export default function DashboardPage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
@@ -16,6 +16,8 @@ export default function DashboardPage() {
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(2025)
   const [alerts, setAlerts] = useState<any[]>([])
+  const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
+  const mapRef = useRef<any>(null)
 
   // Extract unique values
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
@@ -55,12 +57,47 @@ export default function DashboardPage() {
     )
   }
 
-  const handleAlertGenerated = (alert: any) => {
-    setAlerts((prev) => [...prev, alert])
-  }
+  useEffect(() => {
+    const checkForAnomalies = async () => {
+      const highRiskEvents = filteredEvents.filter((e) => e.grade === "Grade 3")
+
+      if (highRiskEvents.length > 3) {
+        const alert = {
+          id: crypto.randomUUID(),
+          alertLevel: "high" as const,
+          riskScore: 85,
+          summary: `Critical Alert: ${highRiskEvents.length} Grade 3 events detected across multiple regions`,
+          keyFindings: [
+            `${highRiskEvents.length} high-severity events active`,
+            `Multiple countries affected: ${Array.from(new Set(highRiskEvents.map((e) => e.country))).join(", ")}`,
+            "Requires immediate attention and resource allocation",
+          ],
+          recommendations: ["Mobilize emergency response teams", "Coordinate with regional health authorities"],
+          affectedCountries: Array.from(new Set(highRiskEvents.map((e) => e.country))),
+          trendAnalysis: "Upward trend detected in high-severity events",
+          timestamp: new Date(),
+        }
+
+        setAlerts((prev) => [...prev, alert])
+      }
+    }
+
+    const interval = setInterval(checkForAnomalies, 30000)
+
+    return () => clearInterval(interval)
+  }, [filteredEvents])
 
   const handleDismissAlert = (alertId: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId))
+  }
+
+  const handleAlertViewDetails = (alert: any) => {
+    setSelectedAlertCountries(alert.affectedCountries)
+    document.querySelector(".right-sidebar")?.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const handleAlertJumpToLocation = (countries: string[]) => {
+    setSelectedCountries(countries)
   }
 
   const tickerEvents = useMemo(() => {
@@ -80,16 +117,20 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#e8eef5] font-sans">
       {alerts.map((alert) => (
-        <AIAlertPopup key={alert.id} alert={alert} onDismiss={() => handleDismissAlert(alert.id)} />
+        <AIAlertPopup
+          key={alert.id}
+          alert={alert}
+          onDismiss={() => handleDismissAlert(alert.id)}
+          onViewDetails={handleAlertViewDetails}
+          onJumpToLocation={handleAlertJumpToLocation}
+        />
       ))}
+
+      <AIChatbot events={filteredEvents} />
 
       {/* Left Sidebar */}
       <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-y-auto z-20">
         <div className="mb-4">
-          <AIMonitoringPanel events={filteredEvents} onAlertGenerated={handleAlertGenerated} />
-        </div>
-
-        <div className="mb-3">
           <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-2">🎛️ Filter by Grade</h3>
           <div className="space-y-1.5">
             {uniqueGrades.map((grade) => (
@@ -273,7 +314,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Right Sidebar - Signal Feed */}
-      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-hidden flex flex-col z-20">
+      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#e8eef5] rounded-2xl neu-shadow p-4 overflow-hidden flex flex-col z-20 right-sidebar">
         <h3 className="text-xs font-bold text-[#0056b3] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#d1d9e6]">
           📡 Recent Signals
         </h3>

@@ -10,11 +10,11 @@ const azure = createAzure({
 })
 
 const gpt4o = azure("gpt-4o", {
-  apiVersion: "2024-12-01-preview",
+  apiVersion: "2025-01-01-preview",
 })
 
 const gpt4oMini = azure("gpt-4o-mini", {
-  apiVersion: "2024-12-01-preview",
+  apiVersion: "2025-01-01-preview",
 })
 
 const outbreakAnalysisSchema = z.object({
