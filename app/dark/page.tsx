@@ -264,7 +264,7 @@ export default function DarkThemePage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden h-[calc(100vh-360px)] min-h-[500px]">
+          <div className="rounded-2xl overflow-hidden h-[calc(100vh-280px)] min-h-[600px]">
             <MapboxMap events={filteredEvents} mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf" />
           </div>
         </div>
