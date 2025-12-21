@@ -20,9 +20,10 @@ interface Event {
 
 interface MapboxMapProps {
   events: Event[]
+  mapStyle?: string
 }
 
-export default function MapboxMap({ events }: MapboxMapProps) {
+export default function MapboxMap({ events, mapStyle }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<any>(null)
   const [mapLoaded, setMapLoaded] = useState(false)
@@ -37,34 +38,33 @@ export default function MapboxMap({ events }: MapboxMapProps) {
       try {
         const token = await getMapboxToken()
 
-        // Check if token exists and is a valid string (not empty, not 'undefined' string)
-        if (!token || token.trim() === "" || token === "undefined" || token.length < 20) {
-          console.error("[v0] Invalid Mapbox token:", token)
+        if (!token || token.trim() === "" || token === "undefined" || token === "null" || token.length < 20) {
+          console.error("[v0] Invalid Mapbox token received")
           setError("Mapbox token not configured. Add MAPBOX_ACCESS_TOKEN to your environment variables.")
           return
         }
 
         const mapboxgl = (await import("mapbox-gl")).default
 
-        // Only set accessToken if we have a valid token
         mapboxgl.accessToken = token
 
         if (!map.current) {
           map.current = new mapboxgl.Map({
             container: mapContainer.current,
-            style: "mapbox://styles/akanimo1/cld9l944e002g01oefypmh70y",
+            style: mapStyle || "mapbox://styles/akanimo1/cld9l944e002g01oefypmh70y",
             center: [20, 0],
             zoom: 2,
             projection: "mercator",
           })
 
           map.current.on("load", () => {
+            console.log("[v0] Map loaded successfully")
             setMapLoaded(true)
           })
 
           map.current.on("error", (e: any) => {
             console.error("[v0] Mapbox error:", e)
-            setError("Failed to load map. Please check your Mapbox key is valid.")
+            setError("Failed to load map. Please check your Mapbox token is valid.")
           })
         }
       } catch (err) {
@@ -166,7 +166,7 @@ export default function MapboxMap({ events }: MapboxMapProps) {
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mapContainer} className="w-full h-full rounded-xl" />
+      <div ref={mapContainer} className="absolute inset-0 w-full h-full rounded-xl" />
 
       {/* Event Details Popup */}
       {selectedEvent && (
