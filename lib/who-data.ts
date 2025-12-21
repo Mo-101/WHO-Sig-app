@@ -1,0 +1,136 @@
+// WHO Event data based on actual structure
+export interface WHOEvent {
+  id: string
+  country: string
+  lat: number
+  lon: number
+  disease: string
+  grade: string
+  eventType: string
+  status: string
+  description: string
+  year: number
+}
+
+export const whoEvents: WHOEvent[] = [
+  {
+    id: "1",
+    country: "Mozambique",
+    lat: -18.665695,
+    lon: 35.529562,
+    disease: "Measles",
+    grade: "Grade 3",
+    eventType: "Outbreak",
+    status: "Ongoing",
+    description: "Report of measles in Maputo, Mozambique on 2025-03-11",
+    year: 2025,
+  },
+  {
+    id: "2",
+    country: "Mozambique",
+    lat: -18.665695,
+    lon: 35.529562,
+    disease: "Mpox",
+    grade: "Grade 2",
+    eventType: "Outbreak",
+    status: "New",
+    description: "Report of mpox in Maputo, Mozambique on 2025-04-22",
+    year: 2025,
+  },
+  {
+    id: "3",
+    country: "Mozambique",
+    lat: -18.665695,
+    lon: 35.529562,
+    disease: "Cholera",
+    grade: "Grade 3",
+    eventType: "Outbreak",
+    status: "Ongoing",
+    description: "Report of cholera in Maputo, Mozambique on 2025-03-12",
+    year: 2025,
+  },
+  {
+    id: "4",
+    country: "Nigeria",
+    lat: 6.5244,
+    lon: 3.3792,
+    disease: "Cholera",
+    grade: "Grade 2",
+    eventType: "Outbreak",
+    status: "Ongoing",
+    description: "Report of cholera in Lagos, Nigeria on 2025-04-18",
+    year: 2025,
+  },
+  {
+    id: "5",
+    country: "Burundi",
+    lat: -3.3731,
+    lon: 29.9189,
+    disease: "West Nile Fever",
+    grade: "Grade 1",
+    eventType: "Outbreak",
+    status: "New",
+    description: "Report of west nile fever in Bujumbura, Burundi on 2025-04-28",
+    year: 2025,
+  },
+  {
+    id: "6",
+    country: "South Africa",
+    lat: -30.5595,
+    lon: 22.9375,
+    disease: "Diphtheria",
+    grade: "Grade 2",
+    eventType: "Outbreak",
+    status: "Ongoing",
+    description: "Report of diphtheria in Cape Town, South Africa on 2025-02-14",
+    year: 2025,
+  },
+  {
+    id: "7",
+    country: "Uganda",
+    lat: 0.3476,
+    lon: 32.5825,
+    disease: "Mpox",
+    grade: "Grade 3",
+    eventType: "Outbreak",
+    status: "Ongoing",
+    description: "Report of mpox in Kampala, Uganda on 2025-01-05",
+    year: 2025,
+  },
+  {
+    id: "8",
+    country: "Nigeria",
+    lat: 9.082,
+    lon: 8.6753,
+    disease: "Measles",
+    grade: "Grade 2",
+    eventType: "Outbreak",
+    status: "Ongoing",
+    description: "Report of measles outbreak in Abuja, Nigeria on 2025-03-20",
+    year: 2025,
+  },
+  {
+    id: "9",
+    country: "Uganda",
+    lat: 0.3476,
+    lon: 32.5825,
+    disease: "Cholera",
+    grade: "Grade 1",
+    eventType: "Humanitarian Crisis",
+    status: "New",
+    description: "Report of cholera linked to humanitarian crisis in Uganda on 2025-04-10",
+    year: 2025,
+  },
+  {
+    id: "10",
+    country: "Burundi",
+    lat: -3.3731,
+    lon: 29.9189,
+    disease: "Measles",
+    grade: "Ungraded",
+    eventType: "Outbreak",
+    status: "New",
+    description: "Ungraded measles event reported in Burundi on 2025-05-01",
+    year: 2025,
+  },
+]
