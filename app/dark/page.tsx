@@ -72,7 +72,7 @@ export default function DarkThemePage() {
 
   const handleEventClick = (event: any) => {
     if (mapRef.current) {
-      mapRef.current.flyToLocation(event.lat, event.lon, 14)
+      mapRef.current.flyToLocation(event.lat, event.lon, 17, 45)
       setSelectedMapEvent(event)
       setSelectedCountries([event.country])
     }

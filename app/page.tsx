@@ -105,7 +105,7 @@ export default function DashboardPage() {
 
   const handleEventClick = (event: any) => {
     if (mapRef.current) {
-      mapRef.current.flyToLocation(event.lat, event.lon, 14)
+      mapRef.current.flyToLocation(event.lat, event.lon, 17, 45)
       setSelectedMapEvent(event)
       setSelectedCountries([event.country])
     }
@@ -326,8 +326,13 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-          <div className="rounded-2xl overflow-hidden h-[calc(100vh-280px)] min-h-[600px]">
-            <MapboxMap ref={mapRef} events={filteredEvents} selectedEvent={selectedMapEvent} />
+          <div className="rounded-2xl overflow-hidden h-[calc(100vh-280px)] min-h-[600px] relative">
+            <MapboxMap
+              ref={mapRef}
+              events={filteredEvents}
+              selectedEvent={selectedMapEvent}
+              setSelectedEvent={setSelectedMapEvent}
+            />
           </div>
         </div>
       </main>

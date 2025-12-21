@@ -26,7 +26,7 @@ interface MapboxMapProps {
 }
 
 export interface MapboxMapRef {
-  flyToLocation: (lat: number, lon: number, zoom?: number) => void
+  flyToLocation: (lat: number, lon: number, zoom?: number, pitch?: number) => void
 }
 
 const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
@@ -58,7 +58,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           if (!map.current) {
             map.current = new mapboxgl.Map({
               container: mapContainer.current,
-              style: mapStyle || "mapbox://styles/akanimo1/cld9l944e002g01oefypmh70y",
+              style: mapStyle || "mapbox://styles/akanimo1/cm838i3fu000501saanqg2s79",
               center: [20, 0],
               zoom: 2,
               projection: "mercator",
@@ -245,12 +245,14 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }, [selectedEvent, mapLoaded])
 
     useImperativeHandle(ref, () => ({
-      flyToLocation: (lat: number, lon: number, zoom = 14) => {
+      flyToLocation: (lat: number, lon: number, zoom = 17, pitch = 45) => {
         if (map.current) {
           map.current.flyTo({
             center: [lon, lat],
             zoom: zoom,
-            duration: 2000,
+            pitch: pitch,
+            bearing: 0,
+            duration: 2500,
             essential: true,
           })
         }
@@ -290,7 +292,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }
 
     return (
-      <div className="relative w-full h-full">
+      <div className="relative w-full h-full overflow-hidden">
         <div ref={mapContainer} className="absolute inset-0 w-full h-full rounded-xl" />
 
         {/* Event Details Popup */}
