@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
 import { ExportSection } from "@/components/export-section"
 import { DataSourceMonitor } from "@/components/data-source-monitor"
+import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 import type { MapboxMapRef } from "@/components/mapbox-map"
 
 export default function DashboardPage() {
@@ -61,40 +62,37 @@ export default function DashboardPage() {
     )
   }
 
-  // useEffect(() => {
-  //   const checkForAnomaliesAndDataSources = async () => {
-  //     try {
-  //       // Analyze data sources for alerts
-  //       const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
+  useEffect(() => {
+    const checkForAnomaliesAndDataSources = async () => {
+      try {
+        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
 
-  //       if (alertAnalysis.alertGenerated) {
-  //         const alert = {
-  //           id: crypto.randomUUID(),
-  //           alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
-  //           riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
-  //           summary: alertAnalysis.summary,
-  //           keyFindings: alertAnalysis.findings,
-  //           recommendations: alertAnalysis.recommendations,
-  //           affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
-  //           trendAnalysis: alertAnalysis.estimatedImpact,
-  //           timestamp: new Date(),
-  //         }
+        if (alertAnalysis.alertGenerated) {
+          const alert = {
+            id: crypto.randomUUID(),
+            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+            summary: alertAnalysis.summary,
+            keyFindings: alertAnalysis.findings,
+            recommendations: alertAnalysis.recommendations,
+            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
+            trendAnalysis: alertAnalysis.estimatedImpact,
+            timestamp: new Date(),
+          }
 
-  //         setAlerts((prev) => [...prev, alert])
-  //       }
-  //     } catch (error) {
-  //       console.error("[v0] Error in AI monitoring:", error)
-  //     }
-  //   }
+          setAlerts((prev) => [...prev, alert])
+        }
+      } catch (error) {
+        console.error("[v0] AI monitoring error:", error)
+      }
+    }
 
-  //   // Run initial check
-  //   checkForAnomaliesAndDataSources()
+    checkForAnomaliesAndDataSources()
 
-  //   // Then run every 2 minutes
-  //   const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
 
-  //   return () => clearInterval(interval)
-  // }, [filteredEvents])
+    return () => clearInterval(interval)
+  }, [filteredEvents])
 
   const handleDismissAlert = (alertId: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId))
@@ -294,7 +292,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <div className="mb-3 ticker-wrapper">
+        <div className="mb-3 ticker-wrapper overflow-hidden">
           <div className="ticker-content">{tickerText}</div>
         </div>
 

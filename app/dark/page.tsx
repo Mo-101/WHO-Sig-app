@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { ExportSection } from "@/components/export-section"
 import AIChatbot from "@/components/ai-chatbot" // Import AIChatbot
 import type { MapboxMapRef } from "@/components/mapbox-map"
+import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 
 export default function DarkThemePage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
@@ -95,6 +96,38 @@ export default function DarkThemePage() {
   const handleAlertGenerated = (alert: any) => {
     setAlerts((prev) => [...prev, alert])
   }
+
+  useEffect(() => {
+    const checkForAnomaliesAndDataSources = async () => {
+      try {
+        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
+
+        if (alertAnalysis.alertGenerated) {
+          const alert = {
+            id: crypto.randomUUID(),
+            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+            summary: alertAnalysis.summary,
+            keyFindings: alertAnalysis.findings,
+            recommendations: alertAnalysis.recommendations,
+            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
+            trendAnalysis: alertAnalysis.estimatedImpact,
+            timestamp: new Date(),
+          }
+
+          setAlerts((prev) => [...prev, alert])
+        }
+      } catch (error) {
+        console.error("[v0] AI monitoring error:", error)
+      }
+    }
+
+    checkForAnomaliesAndDataSources()
+
+    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+
+    return () => clearInterval(interval)
+  }, [filteredEvents])
 
   return (
     <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
