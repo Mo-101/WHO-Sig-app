@@ -67,7 +67,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           if (!map.current) {
             map.current = new mapboxgl.Map({
               container: mapContainer.current,
-              style: mapStyle || "mapbox://styles/akanimo1/cm838i3fu000501saanqg2s79",
+              style: mapStyle || "mapbox://styles/akanimo1/cld9l944e002g01oefypmh70y",
               center: [20, 0],
               zoom: 2,
               projection: "mercator",

@@ -4,13 +4,13 @@ Complete Streamlit application matching the Next.js React dashboard design exact
 
 ## Quick Start
 
-\`\`\`bash
+```bash
 # Install dependencies
 pip install -r requirements.txt
 
 # Run the app
 streamlit run app.py
-\`\`\`
+```
 
 The dashboard opens at http://localhost:8501
 
@@ -36,7 +36,7 @@ The dashboard opens at http://localhost:8501
 
 Expected DataFrame columns:
 
-\`\`\`python
+```python
 {
     'country': str,          # Country name
     'disease': str,          # Disease name
@@ -52,7 +52,7 @@ Expected DataFrame columns:
     'deaths': int,           # Total deaths
     'report_date': datetime  # Report date
 }
-\`\`\`
+```
 
 ## Customization
 
@@ -60,7 +60,7 @@ Expected DataFrame columns:
 
 Replace `load_data()` in `app.py`:
 
-\`\`\`python
+```python
 @st.cache_data(ttl=1800)
 def load_data():
     # From CSV
@@ -75,7 +75,7 @@ def load_data():
     
     df['report_date'] = pd.to_datetime(df['report_date'])
     return df
-\`\`\`
+```
 
 ### Theme Colors
 
@@ -103,19 +103,19 @@ def load_data():
 3. Deploy
 
 ### Local Server
-\`\`\`bash
+```bash
 streamlit run app.py --server.port 8501
-\`\`\`
+```
 
 ### Docker
-\`\`\`dockerfile
+```dockerfile
 FROM python:3.10-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY app.py .
 CMD ["streamlit", "run", "app.py"]
-\`\`\`
+```
 
 ## Comparison with React App
 

@@ -28,9 +28,9 @@ This dashboard is configured to use your Azure OpenAI deployment for AI-powered 
 ### 1. Add Azure API Key to Environment Variables
 
 **Required Environment Variable:**
-\`\`\`env
+```env
 AZURE_OPENAI_API_KEY=your_api_key_here
-\`\`\`
+```
 
 **How to add:**
 1. Go to the **Vars** section in the left sidebar
@@ -54,18 +54,18 @@ This allows the system to use cheaper models for routine monitoring while reserv
 
 #### 1. Azure Configuration
 
-\`\`\`env
+```env
 # Add to your environment variables in Vercel
 AZURE_OPENAI_API_KEY=your_azure_key_here
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4o
-\`\`\`
+```
 
 #### 2. Update AI SDK Configuration
 
 The AI SDK in this project defaults to using the Vercel AI Gateway. To use your Azure setup:
 
-\`\`\`typescript
+```typescript
 // lib/ai-analysis.ts
 import { generateObject, generateText } from "ai"
 import { azure } from "@ai-sdk/azure"
@@ -82,7 +82,7 @@ const { object } = await generateObject({
   schema: outbreakAnalysisSchema,
   prompt: '...',
 })
-\`\`\`
+```
 
 ## AI Features in Your Dashboard
 

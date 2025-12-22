@@ -7,18 +7,13 @@ import { WHO_DATA_SOURCES } from "./data-sources"
 import { getEnhancedSystemPrompt, getDataSourcesContext, getAnalysisFramework } from "./ai-knowledge-base"
 
 const azure = createAzure({
-  resourceName: "afro-osl-resource",
+  resourceName: "afro-agents-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  baseURL: "https://afro-osl-resource.cognitiveservices.azure.com/openai/deployments",
 })
 
-const gpt4o = azure("gpt-4o", {
-  apiVersion: "2025-01-01-preview",
-})
+const gpt4o = azure("gpt-4o")
 
-const gpt4oMini = azure("gpt-4o-mini", {
-  apiVersion: "2025-01-01-preview",
-})
+const gpt4oMini = azure("gpt-4o-mini")
 
 const outbreakAnalysisSchema = z.object({
   alertLevel: z.enum(["critical", "high", "medium", "low"]),

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { exportToPDF, exportToExcel } from "@/lib/export-utils"
+import { exportToPDF, exportToExcel, exportToCSV } from "@/lib/export-utils"
+import { Download, FileText, Table, File } from "lucide-react"
 
 interface ExportSectionProps {
   events: any[]
@@ -11,26 +12,31 @@ interface ExportSectionProps {
 
 export function ExportSection({ events, filters, isDark = false }: ExportSectionProps) {
   const [exporting, setExporting] = useState(false)
+  const [exportType, setExportType] = useState<string | null>(null)
 
-  const handleExportPDF = async () => {
+  const handleExport = async (type: "pdf" | "excel" | "csv") => {
     setExporting(true)
+    setExportType(type)
     try {
-      await exportToPDF(events, filters)
+      switch (type) {
+        case "pdf":
+          await exportToPDF(events, filters, {
+            start: filters.startDate || "2025-01-01",
+            end: filters.endDate || new Date().toISOString().split("T")[0],
+          })
+          break
+        case "excel":
+          exportToExcel(events, filters)
+          break
+        case "csv":
+          exportToCSV(events)
+          break
+      }
     } catch (error) {
-      console.error("PDF export failed:", error)
+      console.error(`${type} export failed:`, error)
     } finally {
       setExporting(false)
-    }
-  }
-
-  const handleExportExcel = () => {
-    setExporting(true)
-    try {
-      exportToExcel(events)
-    } catch (error) {
-      console.error("Excel export failed:", error)
-    } finally {
-      setExporting(false)
+      setExportType(null)
     }
   }
 
@@ -40,39 +46,72 @@ export function ExportSection({ events, filters, isDark = false }: ExportSection
 
   return (
     <div className={`${bgColor} rounded-2xl ${isDark ? "shadow-lg" : "neu-shadow"} p-4`}>
-      <h3 className={`text-xs font-bold ${accentColor} uppercase tracking-wide mb-3`}>📥 Export Data</h3>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2 mb-3">
+        <Download className={`w-4 h-4 ${accentColor}`} />
+        <h3 className={`text-xs font-bold ${accentColor} uppercase tracking-wide`}>Export Data</h3>
+      </div>
+
+      <div className="space-y-2">
         <button
-          onClick={handleExportPDF}
+          onClick={() => handleExport("pdf")}
           disabled={exporting}
-          className={`flex-1 ${bgColor} ${isDark ? "shadow-lg hover:shadow-xl" : "neu-shadow hover:shadow-md"} rounded-xl px-4 py-3 flex flex-col items-center gap-2 transition-all ${exporting ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] cursor-pointer"}`}
+          className={`w-full ${bgColor} ${isDark ? "shadow-lg hover:shadow-xl" : "neu-shadow hover:shadow-md"} rounded-lg px-3 py-2.5 flex items-center justify-between transition-all ${exporting && exportType === "pdf" ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] cursor-pointer"}`}
         >
-          <svg className={`w-6 h-6 ${textColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-            />
-          </svg>
-          <span className={`text-xs font-semibold ${textColor}`}>PDF Report</span>
+          <div className="flex items-center gap-2">
+            <FileText className={`w-4 h-4 ${textColor}`} />
+            <div className="text-left">
+              <div className={`text-xs font-semibold ${textColor}`}>PDF Report</div>
+              <div className={`text-[9px] ${isDark ? "text-[#94a3b8]" : "text-[#6a7a94]"}`}>
+                Complete with executive summary
+              </div>
+            </div>
+          </div>
+          {exporting && exportType === "pdf" && (
+            <div className="animate-spin h-4 w-4 border-2 border-[#009edb] border-t-transparent rounded-full" />
+          )}
         </button>
 
         <button
-          onClick={handleExportExcel}
+          onClick={() => handleExport("excel")}
           disabled={exporting}
-          className={`flex-1 ${bgColor} ${isDark ? "shadow-lg hover:shadow-xl" : "neu-shadow hover:shadow-md"} rounded-xl px-4 py-3 flex flex-col items-center gap-2 transition-all ${exporting ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] cursor-pointer"}`}
+          className={`w-full ${bgColor} ${isDark ? "shadow-lg hover:shadow-xl" : "neu-shadow hover:shadow-md"} rounded-lg px-3 py-2.5 flex items-center justify-between transition-all ${exporting && exportType === "excel" ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] cursor-pointer"}`}
         >
-          <svg className={`w-6 h-6 ${textColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-            />
-          </svg>
-          <span className={`text-xs font-semibold ${textColor}`}>Excel Data</span>
+          <div className="flex items-center gap-2">
+            <Table className={`w-4 h-4 ${textColor}`} />
+            <div className="text-left">
+              <div className={`text-xs font-semibold ${textColor}`}>Excel Workbook</div>
+              <div className={`text-[9px] ${isDark ? "text-[#94a3b8]" : "text-[#6a7a94]"}`}>
+                Multiple sheets with analytics
+              </div>
+            </div>
+          </div>
+          {exporting && exportType === "excel" && (
+            <div className="animate-spin h-4 w-4 border-2 border-[#009edb] border-t-transparent rounded-full" />
+          )}
         </button>
+
+        <button
+          onClick={() => handleExport("csv")}
+          disabled={exporting}
+          className={`w-full ${bgColor} ${isDark ? "shadow-lg hover:shadow-xl" : "neu-shadow hover:shadow-md"} rounded-lg px-3 py-2.5 flex items-center justify-between transition-all ${exporting && exportType === "csv" ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02] cursor-pointer"}`}
+        >
+          <div className="flex items-center gap-2">
+            <File className={`w-4 h-4 ${textColor}`} />
+            <div className="text-left">
+              <div className={`text-xs font-semibold ${textColor}`}>CSV File</div>
+              <div className={`text-[9px] ${isDark ? "text-[#94a3b8]" : "text-[#6a7a94]"}`}>Quick data export</div>
+            </div>
+          </div>
+          {exporting && exportType === "csv" && (
+            <div className="animate-spin h-4 w-4 border-2 border-[#009edb] border-t-transparent rounded-full" />
+          )}
+        </button>
+      </div>
+
+      <div className={`mt-3 p-2 rounded-lg ${isDark ? "bg-[#0f1419]" : "bg-white/40"}`}>
+        <p className={`text-[9px] ${isDark ? "text-[#94a3b8]" : "text-[#6a7a94]"}`}>
+          Exporting {events.length} events with current filters applied
+        </p>
       </div>
     </div>
   )
