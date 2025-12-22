@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
+import { useState, useMemo, useRef } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
@@ -10,7 +10,6 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
 import { ExportSection } from "@/components/export-section"
 import { DataSourceMonitor } from "@/components/data-source-monitor"
-import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 import type { MapboxMapRef } from "@/components/mapbox-map"
 
 export default function DashboardPage() {
@@ -62,37 +61,37 @@ export default function DashboardPage() {
     )
   }
 
-  useEffect(() => {
-    const checkForAnomaliesAndDataSources = async () => {
-      try {
-        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
+  // useEffect(() => {
+  //   const checkForAnomaliesAndDataSources = async () => {
+  //     try {
+  //       const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
 
-        if (alertAnalysis.alertGenerated) {
-          const alert = {
-            id: crypto.randomUUID(),
-            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
-            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
-            summary: alertAnalysis.summary,
-            keyFindings: alertAnalysis.findings,
-            recommendations: alertAnalysis.recommendations,
-            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
-            trendAnalysis: alertAnalysis.estimatedImpact,
-            timestamp: new Date(),
-          }
+  //       if (alertAnalysis.alertGenerated) {
+  //         const alert = {
+  //           id: crypto.randomUUID(),
+  //           alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+  //           riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+  //           summary: alertAnalysis.summary,
+  //           keyFindings: alertAnalysis.findings,
+  //           recommendations: alertAnalysis.recommendations,
+  //           affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
+  //           trendAnalysis: alertAnalysis.estimatedImpact,
+  //           timestamp: new Date(),
+  //         }
 
-          setAlerts((prev) => [...prev, alert])
-        }
-      } catch (error) {
-        console.error("[v0] AI monitoring error:", error)
-      }
-    }
+  //         setAlerts((prev) => [...prev, alert])
+  //       }
+  //     } catch (error) {
+  //       console.error("[v0] AI monitoring error:", error)
+  //     }
+  //   }
 
-    checkForAnomaliesAndDataSources()
+  //   checkForAnomaliesAndDataSources()
 
-    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+  //   const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
 
-    return () => clearInterval(interval)
-  }, [filteredEvents])
+  //   return () => clearInterval(interval)
+  // }, [filteredEvents])
 
   const handleDismissAlert = (alertId: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId))
@@ -359,18 +358,28 @@ export default function DashboardPage() {
               className="pb-3 border-b border-[#d1d9e6] last:border-none cursor-pointer hover:bg-white/50 rounded-lg p-2 transition-all hover:shadow-md"
             >
               <div className="flex items-start gap-2 mb-1">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-[#009edb] to-[#0056b3] flex items-center justify-center text-white text-[10px] font-bold">
-                  {idx + 1}
+                <div className="flex-shrink-0 w-8 h-8 rounded-full neu-shadow-sm overflow-hidden bg-white flex items-center justify-center">
+                  <img
+                    src={`/${event.country}.png`}
+                    alt={`${event.country} flag`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to numbered badge if flag image doesn't exist
+                      e.currentTarget.style.display = "none"
+                      e.currentTarget.parentElement!.innerHTML =
+                        `<div class="w-full h-full rounded-full bg-gradient-to-br from-[#009edb] to-[#0056b3] flex items-center justify-center text-white text-[10px] font-bold">${idx + 1}</div>`
+                    }}
+                  />
                 </div>
                 <span className="text-[11px] font-semibold text-[#0056b3] uppercase">{event.country}</span>
               </div>
-              <div className="ml-7 text-xs font-semibold text-[#2c3e50] mb-1">{event.disease}</div>
-              <div className="ml-7 text-[9px] text-[#6a7a94] mb-1">
+              <div className="ml-10 text-xs font-semibold text-[#2c3e50] mb-1">{event.disease}</div>
+              <div className="ml-10 text-[9px] text-[#6a7a94] mb-1">
                 {event.eventType} • {event.status}
               </div>
-              <div className="ml-7 text-[10px] text-[#5a6a7a] leading-relaxed mb-1">{event.description}</div>
+              <div className="ml-10 text-[10px] text-[#5a6a7a] leading-relaxed mb-1">{event.description}</div>
               <div
-                className={`ml-7 inline-block text-[9px] px-2 py-0.5 rounded ${
+                className={`ml-10 inline-block text-[9px] px-2 py-0.5 rounded ${
                   event.grade === "Grade 3"
                     ? "bg-[#ff3355]/15 text-[#ff3355]"
                     : event.grade === "Grade 2"
