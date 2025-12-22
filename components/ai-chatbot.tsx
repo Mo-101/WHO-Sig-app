@@ -22,7 +22,7 @@ export function AIChatbot({ events }: AIChatbotProps) {
       id: "welcome",
       role: "assistant",
       content:
-        "Hello! I'm your WHO Signal Intelligence AI assistant. Ask me anything about disease outbreaks, trends, or specific countries.",
+        "Hello! I'm your WHO AFRO Signal Intelligence AI assistant. I help analyze disease outbreaks across African countries using real-time data from WHO emergency portals. Ask me about outbreak trends, Grade 3 events, regional patterns, or specific diseases.",
       timestamp: new Date(),
     },
   ])

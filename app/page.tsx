@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
+import { useState, useMemo, useRef } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
@@ -9,6 +9,7 @@ import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
 import { ExportSection } from "@/components/export-section"
+import { DataSourceMonitor } from "@/components/data-source-monitor"
 import type { MapboxMapRef } from "@/components/mapbox-map"
 
 export default function DashboardPage() {
@@ -60,35 +61,40 @@ export default function DashboardPage() {
     )
   }
 
-  useEffect(() => {
-    const checkForAnomalies = async () => {
-      const highRiskEvents = filteredEvents.filter((e) => e.grade === "Grade 3")
+  // useEffect(() => {
+  //   const checkForAnomaliesAndDataSources = async () => {
+  //     try {
+  //       // Analyze data sources for alerts
+  //       const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
 
-      if (highRiskEvents.length > 3) {
-        const alert = {
-          id: crypto.randomUUID(),
-          alertLevel: "high" as const,
-          riskScore: 85,
-          summary: `Critical Alert: ${highRiskEvents.length} Grade 3 events detected across multiple regions`,
-          keyFindings: [
-            `${highRiskEvents.length} high-severity events active`,
-            `Multiple countries affected: ${Array.from(new Set(highRiskEvents.map((e) => e.country))).join(", ")}`,
-            "Requires immediate attention and resource allocation",
-          ],
-          recommendations: ["Mobilize emergency response teams", "Coordinate with regional health authorities"],
-          affectedCountries: Array.from(new Set(highRiskEvents.map((e) => e.country))),
-          trendAnalysis: "Upward trend detected in high-severity events",
-          timestamp: new Date(),
-        }
+  //       if (alertAnalysis.alertGenerated) {
+  //         const alert = {
+  //           id: crypto.randomUUID(),
+  //           alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+  //           riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+  //           summary: alertAnalysis.summary,
+  //           keyFindings: alertAnalysis.findings,
+  //           recommendations: alertAnalysis.recommendations,
+  //           affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
+  //           trendAnalysis: alertAnalysis.estimatedImpact,
+  //           timestamp: new Date(),
+  //         }
 
-        setAlerts((prev) => [...prev, alert])
-      }
-    }
+  //         setAlerts((prev) => [...prev, alert])
+  //       }
+  //     } catch (error) {
+  //       console.error("[v0] Error in AI monitoring:", error)
+  //     }
+  //   }
 
-    const interval = setInterval(checkForAnomalies, 30000)
+  //   // Run initial check
+  //   checkForAnomaliesAndDataSources()
 
-    return () => clearInterval(interval)
-  }, [filteredEvents])
+  //   // Then run every 2 minutes
+  //   const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+
+  //   return () => clearInterval(interval)
+  // }, [filteredEvents])
 
   const handleDismissAlert = (alertId: string) => {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId))
@@ -256,6 +262,11 @@ export default function DashboardPage() {
               <span className="text-base font-bold text-[#2c3e50]">{gradeSummary.gu}</span>
             </div>
           </div>
+        </div>
+
+        {/* Data Source Monitor */}
+        <div className="mt-4">
+          <DataSourceMonitor />
         </div>
 
         {/* Export Section */}
