@@ -100,13 +100,22 @@ export default function DarkThemePage() {
   useEffect(() => {
     const checkForAnomaliesAndDataSources = async () => {
       try {
+        console.log("[v0] Running AI analysis on outbreak data (Dark Theme)...")
         const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
 
         if (alertAnalysis.alertGenerated) {
+          console.log("[v0] Alert generated:", alertAnalysis.alertLevel)
           const alert = {
             id: crypto.randomUUID(),
             alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
-            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+            riskScore:
+              alertAnalysis.alertLevel === "critical"
+                ? 95
+                : alertAnalysis.alertLevel === "high"
+                  ? 85
+                  : alertAnalysis.alertLevel === "medium"
+                    ? 70
+                    : 50,
             summary: alertAnalysis.summary,
             keyFindings: alertAnalysis.findings,
             recommendations: alertAnalysis.recommendations,
@@ -116,14 +125,18 @@ export default function DarkThemePage() {
           }
 
           setAlerts((prev) => [...prev, alert])
+        } else {
+          console.log("[v0] No alerts generated - situation normal")
         }
       } catch (error) {
         console.error("[v0] AI monitoring error:", error)
       }
     }
 
+    // Run initial check
     checkForAnomaliesAndDataSources()
 
+    // Run every 2 minutes
     const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
 
     return () => clearInterval(interval)

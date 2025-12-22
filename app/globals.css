@@ -6,8 +6,10 @@
 :root {
   --background: 232 238 245;
   --foreground: 44 62 80;
-  --card: 232 238 245;
-  --card-foreground: 44 62 80;
+  --color-card: 239 242 249;
+  --color-card-foreground: 60 70 90;
+  --color-input: 235 240 248;
+  --color-border: 210 220 230;
   --popover: 232 238 245;
   --popover-foreground: 44 62 80;
   --primary: 0 158 219;
@@ -42,8 +44,10 @@
 .dark {
   --background: 15 20 25;
   --foreground: 226 232 240;
-  --card: 26 31 38;
-  --card-foreground: 226 232 240;
+  --color-card: 28 34 45;
+  --color-card-foreground: 215 225 235;
+  --color-input: 45 52 62;
+  --color-border: 55 68 80;
   --popover: 18 25 35;
   --popover-foreground: 226 232 240;
   --primary: 59 130 246;
@@ -130,6 +134,66 @@
 }
 
 @layer utilities {
+  /* Enhanced neumorphic system with semantic color tokens and utilities */
+
+  /* Semantic Color Utilities */
+  /* Fixed bg-surface to use direct color value */
+  .bg-surface {
+    background: #ebfaff;
+  }
+
+  .text-surface-fg {
+    color: #2c3e50;
+  }
+
+  /* Neumorphic Shadow Palette */
+  .shadow-neu {
+    box-shadow: 8px 8px 16px rgba(194, 209, 224, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.8);
+  }
+
+  .shadow-neu-sm {
+    box-shadow: 4px 4px 12px rgba(194, 209, 224, 0.5), -4px -4px 12px rgba(255, 255, 255, 0.8);
+  }
+
+  .shadow-neu-inset {
+    box-shadow: inset 6px 6px 12px rgba(194, 209, 224, 0.4), inset -6px -6px 12px rgba(255, 255, 255, 0.7);
+  }
+
+  .shadow-neu-inset-sm {
+    box-shadow: inset 3px 3px 8px rgba(194, 209, 224, 0.4), inset -3px -3px 8px rgba(255, 255, 255, 0.7);
+  }
+
+  /* Hover & Active States */
+  .shadow-neu-hover:hover {
+    box-shadow: 12px 12px 24px rgba(194, 209, 224, 0.7), -12px -12px 24px rgba(255, 255, 255, 0.9);
+  }
+
+  .shadow-neu-active:active {
+    box-shadow: inset 4px 4px 10px rgba(194, 209, 224, 0.5), inset -4px -4px 10px rgba(255, 255, 255, 0.6);
+  }
+
+  /* Border Radius Tokens */
+  .rounded-neu {
+    border-radius: 1.5rem;
+  }
+
+  .rounded-pill {
+    border-radius: 9999px;
+  }
+
+  /* Smooth Transitions */
+  .transition-neu {
+    transition: all 0.25s ease-in-out;
+  }
+
+  /* Input Controls */
+  .input-neu {
+    background: rgb(var(--color-input));
+    box-shadow: 4px 4px 12px rgba(194, 209, 224, 0.5), -4px -4px 12px rgba(255, 255, 255, 0.8);
+    border-radius: 1.5rem;
+    transition: all 0.25s ease-in-out;
+  }
+
   /* Enhanced neumorphic shadows to match reference image - softer, more subtle */
   .neu-shadow {
     box-shadow: 8px 8px 16px rgba(194, 209, 224, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.8);

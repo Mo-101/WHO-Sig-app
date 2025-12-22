@@ -1,14 +1,12 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useState, useMemo, useRef, useEffect } from "react"
 import MapboxMap from "@/components/mapbox-map"
 import { whoEvents } from "@/lib/who-data"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
 import { ExportSection } from "@/components/export-section"
-import { DataSourceMonitor } from "@/components/data-source-monitor"
 import type { MapboxMapRef } from "@/components/mapbox-map"
 import { AdvancedSearch } from "@/components/advanced-search"
 import { FilterPresets } from "@/components/filter-presets"
@@ -17,6 +15,9 @@ import { NotificationCenter } from "@/components/notification-center"
 import { EventDetailModal } from "@/components/event-detail-modal"
 import { BarChart3 } from "lucide-react"
 import Link from "next/link"
+import { FilterBlock } from "@/components/filter-block"
+import { GradeSummaryCard } from "@/components/grade-summary-card"
+import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis" // Declare the variable before using it
 
 export default function DashboardPage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
@@ -166,6 +167,87 @@ export default function DashboardPage() {
     )
   }, [selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, searchFilteredEvents])
 
+  // Generate mock alerts for demonstration until Azure is fixed
+  useEffect(() => {
+    const generateMockAlert = () => {
+      const mockAlert = {
+        id: crypto.randomUUID(),
+        alertLevel: "high" as const,
+        riskScore: 85,
+        summary: "Multiple Grade 3 outbreaks detected across 4 African countries requiring immediate attention",
+        keyFindings: [
+          "Cholera outbreak in Malawi shows 15% increase in cases over past 7 days",
+          "Mpox cases reported in 3 neighboring countries suggesting cross-border transmission",
+          "Healthcare capacity concerns in affected regions due to simultaneous outbreaks",
+        ],
+        recommendations: [
+          "Deploy rapid response teams to Malawi and DRC",
+          "Enhance cross-border surveillance and coordination",
+          "Request emergency medical supplies for affected regions",
+        ],
+        affectedCountries: ["Malawi", "DRC", "Nigeria", "Kenya"],
+        trendAnalysis: "Upward trend in case numbers with geographic expansion observed",
+        timestamp: new Date(),
+      }
+
+      setAlerts((prev) => [...prev, mockAlert])
+    }
+
+    // Generate first mock alert after 3 seconds
+    const initialTimer = setTimeout(generateMockAlert, 3000)
+
+    // Generate periodic mock alerts every 2 minutes
+    const interval = setInterval(generateMockAlert, 120000)
+
+    return () => {
+      clearTimeout(initialTimer)
+      clearInterval(interval)
+    }
+  }, [])
+
+  // AI monitoring code
+  useEffect(() => {
+    const checkForAnomaliesAndDataSources = async () => {
+      try {
+        console.log("[v0] Running AI analysis on outbreak data...")
+        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
+
+        if (alertAnalysis.alertGenerated) {
+          console.log("[v0] Alert generated:", alertAnalysis.alertLevel)
+          const alert = {
+            id: crypto.randomUUID(),
+            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+            riskScore:
+              alertAnalysis.alertLevel === "critical"
+                ? 95
+                : alertAnalysis.alertLevel === "high"
+                  ? 85
+                  : alertAnalysis.alertLevel === "medium"
+                    ? 70
+                    : 50,
+            summary: alertAnalysis.summary,
+            keyFindings: alertAnalysis.findings,
+            recommendations: alertAnalysis.recommendations,
+            affectedCountries: Array.from(new Set(filteredEvents.slice(0, 10).map((e) => e.country))),
+            trendAnalysis: alertAnalysis.estimatedImpact,
+            timestamp: new Date(),
+          }
+
+          setAlerts((prev) => [...prev, alert])
+        } else {
+          console.log("[v0] No alerts generated - situation normal")
+        }
+      } catch (error) {
+        console.error("[v0] AI monitoring error:", error)
+      }
+    }
+
+    checkForAnomaliesAndDataSources()
+    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+
+    return () => clearInterval(interval)
+  }, [filteredEvents])
+
   return (
     <div className="h-screen bg-[#ebfaff] font-sans overflow-hidden">
       {alerts.map((alert) => (
@@ -189,8 +271,23 @@ export default function DashboardPage() {
         />
       )}
 
-      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#ebfaff] rounded-3xl shadow-[10px_10px_25px_#c2d1e0,-10px_-10px_25px_#ffffff] p-4 overflow-y-auto z-20 custom-scrollbar">
-        <AdvancedSearch events={whoEvents} onSearchResults={setSearchFilteredEvents} />
+      <div className="fixed left-2.5 top-2.5 bottom-2.5 w-72 bg-surface rounded-neu shadow-neu p-5 overflow-y-auto custom-scrollbar z-10">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-bold text-[#0056b3] flex items-center gap-2">
+            <span className="text-lg">🎛️</span> FILTERS
+          </h2>
+        </div>
+
+        <NotificationCenter events={filteredEvents} />
+
+        <ExportSection events={filteredEvents} />
+
+        <AdvancedSearch
+          events={whoEvents}
+          onSearchResults={(results) => {
+            setSearchFilteredEvents(results)
+          }}
+        />
 
         <FilterPresets
           currentFilters={{
@@ -213,33 +310,21 @@ export default function DashboardPage() {
         {activeFilterCount > 0 && (
           <button
             onClick={handleClearFilters}
-            className="w-full mb-4 px-4 py-2.5 bg-[#ebfaff] text-[#ff3355] text-xs font-bold rounded-xl shadow-[6px_6px_12px_#c2d1e0,-6px_-6px_12px_#ffffff] hover:shadow-[4px_4px_8px_#c2d1e0,-4px_-4px_8px_#ffffff] active:shadow-[inset_4px_4px_8px_#c2d1e0,inset_-4px_-4px_8px_#ffffff] transition-all"
+            className="w-full mb-4 px-4 py-2.5 bg-surface text-[#ff3355] text-xs font-bold rounded-pill shadow-neu-sm shadow-neu-hover shadow-neu-active transition-neu"
           >
             🗑️ Clear All Filters ({activeFilterCount})
           </button>
         )}
 
-        <div className="mb-4">
-          <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="text-base">🎛️</span> Filter by Grade
-          </h3>
-          <div className="space-y-2">
-            {uniqueGrades.map((grade) => (
-              <label
-                key={grade}
-                className="flex items-center space-x-3 p-2.5 bg-[#ebfaff] rounded-xl shadow-[4px_4px_10px_#c2d1e0,-4px_-4px_10px_#ffffff] hover:shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] cursor-pointer transition-all"
-              >
-                <Checkbox
-                  id={`grade-${grade}`}
-                  checked={selectedGrades.includes(grade)}
-                  onCheckedChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
-                  className="data-[state=checked]:bg-[#009edb] border-[#d1d9e6]"
-                />
-                <span className="text-xs text-[#2c3e50] font-medium flex-1">{grade}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <GradeSummaryCard summary={gradeSummary} />
+
+        <FilterBlock
+          title="Filter by Grade"
+          icon="🎯"
+          items={uniqueGrades}
+          selectedItems={selectedGrades}
+          onToggle={(value) => toggleFilter(value, selectedGrades, setSelectedGrades)}
+        />
 
         <div className="mb-4">
           <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -248,7 +333,7 @@ export default function DashboardPage() {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="w-full px-4 py-2.5 rounded-xl bg-[#ebfaff] shadow-[inset_4px_4px_10px_#c2d1e0,inset_-4px_-4px_10px_#ffffff] text-xs text-[#2c3e50] font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#009edb]"
+            className="w-full px-4 py-2.5 rounded-neu input-neu text-xs text-[#2c3e50] font-medium border-none focus:outline-none focus:ring-2 focus:ring-[#009edb]"
           >
             {uniqueYears.map((year) => (
               <option key={year} value={year}>
@@ -258,107 +343,30 @@ export default function DashboardPage() {
           </select>
         </div>
 
-        <div className="mb-4">
-          <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="text-base">🚨</span> Event Type
-          </h3>
-          <div className="space-y-2">
-            {uniqueEventTypes.map((type) => (
-              <label
-                key={type}
-                className="flex items-center space-x-3 p-2.5 bg-[#ebfaff] rounded-xl shadow-[4px_4px_10px_#c2d1e0,-4px_-4px_10px_#ffffff] hover:shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] cursor-pointer transition-all"
-              >
-                <Checkbox
-                  id={`type-${type}`}
-                  checked={selectedEventTypes.includes(type)}
-                  onCheckedChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
-                  className="data-[state=checked]:bg-[#009edb] border-[#d1d9e6]"
-                />
-                <span className="text-xs text-[#2c3e50] font-medium flex-1">{type}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <FilterBlock
+          title="Event Type"
+          icon="🚨"
+          items={uniqueEventTypes}
+          selectedItems={selectedEventTypes}
+          onToggle={(value) => toggleFilter(value, selectedEventTypes, setSelectedEventTypes)}
+        />
 
-        <div className="mb-4">
-          <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="text-base">🌍</span> Country
-          </h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-            {uniqueCountries.map((country) => (
-              <label
-                key={country}
-                className="flex items-center space-x-3 p-2.5 bg-[#ebfaff] rounded-xl shadow-[4px_4px_10px_#c2d1e0,-4px_-4px_10px_#ffffff] hover:shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] cursor-pointer transition-all"
-              >
-                <Checkbox
-                  id={`country-${country}`}
-                  checked={selectedCountries.includes(country)}
-                  onCheckedChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
-                  className="data-[state=checked]:bg-[#009edb] border-[#d1d9e6]"
-                />
-                <span className="text-xs text-[#2c3e50] font-medium flex-1">{country}</span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <FilterBlock
+          title="Country"
+          icon="🌍"
+          items={uniqueCountries}
+          selectedItems={selectedCountries}
+          onToggle={(value) => toggleFilter(value, selectedCountries, setSelectedCountries)}
+        />
 
-        <div className="mb-4">
-          <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="text-base">🦠</span> Disease
-          </h3>
-          <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-            {uniqueDiseases.map((disease) => (
-              <label
-                key={disease}
-                className="flex items-center space-x-3 p-2.5 bg-[#ebfaff] rounded-xl shadow-[4px_4px_10px_#c2d1e0,-4px_-4px_10px_#ffffff] hover:shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] cursor-pointer transition-all"
-              >
-                <Checkbox
-                  id={`disease-${disease}`}
-                  checked={selectedDiseases.includes(disease)}
-                  onCheckedChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
-                  className="data-[state=checked]:bg-[#009edb] border-[#d1d9e6]"
-                />
-                <span className="text-xs text-[#2c3e50] font-medium flex-1 text-balance leading-tight">{disease}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-[10px] font-bold text-[#0056b3] uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="text-base">📊</span> Grade Summary
-          </h3>
-          <div className="space-y-2.5">
-            <div className="flex justify-between items-center px-4 py-3 bg-[#ebfaff] rounded-xl shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] border-l-4 border-[#ff3355]">
-              <span className="text-xs font-medium text-[#6a7a94]">Grade 3</span>
-              <span className="text-lg font-bold text-[#2c3e50]">{gradeSummary.g3}</span>
-            </div>
-            <div className="flex justify-between items-center px-4 py-3 bg-[#ebfaff] rounded-xl shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] border-l-4 border-[#ff9933]">
-              <span className="text-xs font-medium text-[#6a7a94]">Grade 2</span>
-              <span className="text-lg font-bold text-[#2c3e50]">{gradeSummary.g2}</span>
-            </div>
-            <div className="flex justify-between items-center px-4 py-3 bg-[#ebfaff] rounded-xl shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] border-l-4 border-[#ffcc00]">
-              <span className="text-xs font-medium text-[#6a7a94]">Grade 1</span>
-              <span className="text-lg font-bold text-[#2c3e50]">{gradeSummary.g1}</span>
-            </div>
-            <div className="flex justify-between items-center px-4 py-3 bg-[#ebfaff] rounded-xl shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] border-l-4 border-[#a0a0b0]">
-              <span className="text-xs font-medium text-[#6a7a94]">Ungraded</span>
-              <span className="text-lg font-bold text-[#2c3e50]">{gradeSummary.gu}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <DataSourceMonitor />
-        </div>
-
-        <div className="mt-4">
-          <ExportSection
-            events={filteredEvents}
-            filters={{ selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear }}
-          />
-        </div>
-      </aside>
+        <FilterBlock
+          title="Disease"
+          icon="🦠"
+          items={uniqueDiseases}
+          selectedItems={selectedDiseases}
+          onToggle={(value) => toggleFilter(value, selectedDiseases, setSelectedDiseases)}
+        />
+      </div>
 
       {/* Main Content */}
       <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
@@ -375,7 +383,6 @@ export default function DashboardPage() {
             >
               <BarChart3 className="w-5 h-5 text-[#0056b3]" />
             </Link>
-            <NotificationCenter events={filteredEvents} />
             <ThemeToggle isDark={false} />
             <span className="px-3 py-1.5 bg-gradient-to-r from-[#00c853] to-[#00e676] text-white text-[10px] font-semibold rounded-xl shadow-md">
               ● LIVE
@@ -476,8 +483,20 @@ export default function DashboardPage() {
               className="p-3 bg-[#ebfaff] rounded-2xl shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] hover:shadow-[8px_8px_18px_#c2d1e0,-8px_-8px_18px_#ffffff] cursor-pointer transition-all"
             >
               <div className="flex items-start gap-3 mb-2">
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[#009edb] to-[#0056b3] flex items-center justify-center text-white text-base shadow-md">
-                  🏴
+                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[#009edb] to-[#0056b3] flex items-center justify-center text-white text-base shadow-md overflow-hidden">
+                  <img
+                    src={`/${event.country}.png`}
+                    alt={event.country}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = "none"
+                      const parent = target.parentElement
+                      if (parent) {
+                        parent.innerHTML = `<span class="text-sm">${idx + 1}</span>`
+                      }
+                    }}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-[#0056b3] uppercase truncate">{event.country}</div>
