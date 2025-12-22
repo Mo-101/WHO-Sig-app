@@ -298,30 +298,75 @@ export default function DarkThemePage() {
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+        <div className="grid grid-cols-7 gap-3 mb-3">
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">📊</span>
+            </div>
+            <div className="text-2xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] mb-0.5">
               {filteredEvents.length}
             </div>
-            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Total Events</div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Total Events</div>
           </div>
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">✨</span>
+            </div>
+            <div className="text-2xl font-bold text-[#00c853] leading-tight drop-shadow-[0_0_8px_rgba(0,200,83,0.6)] mb-0.5">
               {newCount}
             </div>
-            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">New Events</div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">New Events</div>
           </div>
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(255,152,0,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">⏱️</span>
+            </div>
+            <div className="text-2xl font-bold text-[#ff9800] leading-tight drop-shadow-[0_0_8px_rgba(255,152,0,0.6)] mb-0.5">
               {ongoingCount}
             </div>
-            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Ongoing</div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Ongoing</div>
           </div>
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
+
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(255,51,85,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">🚨</span>
+            </div>
+            <div className="text-2xl font-bold text-[#ff3355] leading-tight drop-shadow-[0_0_8px_rgba(255,51,85,0.6)] mb-0.5">
               {outbreakCount}
             </div>
-            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Outbreaks</div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Outbreaks</div>
+          </div>
+
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(156,39,176,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">⏳</span>
+            </div>
+            <div className="text-2xl font-bold text-[#9c27b0] leading-tight drop-shadow-[0_0_8px_rgba(156,39,176,0.6)] mb-0.5">
+              {filteredEvents.filter((e) => e.eventType === "Protracted 1").length}
+            </div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 1</div>
+          </div>
+
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(233,30,99,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">⌛</span>
+            </div>
+            <div className="text-2xl font-bold text-[#e91e63] leading-tight drop-shadow-[0_0_8px_rgba(233,30,99,0.6)] mb-0.5">
+              {filteredEvents.filter((e) => e.eventType === "Protracted 2").length}
+            </div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 2</div>
+          </div>
+
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(63,81,181,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
+              <span className="text-xl">🔄</span>
+            </div>
+            <div className="text-2xl font-bold text-[#3f51b5] leading-tight drop-shadow-[0_0_8px_rgba(63,81,181,0.6)] mb-0.5">
+              {filteredEvents.filter((e) => e.eventType === "Protracted 3").length}
+            </div>
+            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 3</div>
           </div>
         </div>
 

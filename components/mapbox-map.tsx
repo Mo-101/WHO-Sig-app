@@ -35,6 +35,8 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     const map = useRef<any>(null)
     const [mapLoaded, setMapLoaded] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [tokenValidated, setTokenValidated] = useState(false)
+    const [isCheckingToken, setIsCheckingToken] = useState(true)
     const markers = useRef<any[]>([])
     const selectedPopupRef = useRef<any>(null)
 
@@ -45,6 +47,12 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         try {
           const token = await getMapboxToken()
 
+          console.log("[v0] Token validation check:", {
+            exists: !!token,
+            length: token?.length,
+            startsWithPk: token?.startsWith("pk."),
+          })
+
           if (
             !token ||
             token.trim() === "" ||
@@ -53,12 +61,18 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             token.length < 20 ||
             !token.startsWith("pk.")
           ) {
-            console.error("[v0] Invalid Mapbox token received:", token ? "Token format invalid" : "Token missing")
+            console.error("[v0] Invalid Mapbox token - stopping initialization")
             setError(
               "Mapbox token not configured properly. Please add a valid MAPBOX_ACCESS_TOKEN to your environment variables.",
             )
+            setTokenValidated(false)
+            setIsCheckingToken(false)
             return
           }
+
+          console.log("[v0] Token validated successfully, initializing map")
+          setTokenValidated(true)
+          setIsCheckingToken(false)
 
           const mapboxgl = (await import("mapbox-gl")).default
 
@@ -66,7 +80,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
           if (!map.current) {
             map.current = new mapboxgl.Map({
-              container: mapContainer.current,
+              container: mapContainer.current!,
               style: mapStyle || "mapbox://styles/akanimo1/cld9l944e002g01oefypmh70y",
               center: [20, 0],
               zoom: 2,
@@ -74,6 +88,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             })
 
             map.current.on("load", () => {
+              console.log("[v0] Map loaded successfully")
               setMapLoaded(true)
             })
 
@@ -89,6 +104,8 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         } catch (err) {
           console.error("[v0] Map initialization error:", err)
           setError("Failed to initialize map. Please ensure MAPBOX_ACCESS_TOKEN is properly configured.")
+          setTokenValidated(false)
+          setIsCheckingToken(false)
         }
       }
 
@@ -103,12 +120,11 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
     }, [])
 
     useEffect(() => {
-      if (!map.current || !mapLoaded) return
+      if (!map.current || !mapLoaded || !tokenValidated) return
 
       const updateMarkers = async () => {
         const mapboxgl = (await import("mapbox-gl")).default
 
-        // Remove existing markers
         markers.current.forEach((marker) => marker.remove())
         markers.current = []
 
@@ -122,7 +138,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           el.style.border = "2px solid white"
           el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)"
 
-          // Color by grade matching WHO grade system
           const gradeColors: Record<string, string> = {
             "Grade 3": "#ff3355",
             "Grade 2": "#ff9933",
@@ -176,11 +191,10 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       }
 
       updateMarkers()
-    }, [events, mapLoaded])
+    }, [events, mapLoaded, tokenValidated])
 
     useEffect(() => {
-      if (!map.current || !mapLoaded || !selectedEvent) {
-        // Remove previous popup if no event selected
+      if (!map.current || !mapLoaded || !selectedEvent || !tokenValidated) {
         if (selectedPopupRef.current) {
           selectedPopupRef.current.remove()
           selectedPopupRef.current = null
@@ -191,7 +205,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const showPersistentPopup = async () => {
         const mapboxgl = (await import("mapbox-gl")).default
 
-        // Remove previous popup if exists
         if (selectedPopupRef.current) {
           selectedPopupRef.current.remove()
         }
@@ -203,7 +216,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           Ungraded: "#a0a0b0",
         }
 
-        // Create persistent popup with detailed event information
         selectedPopupRef.current = new mapboxgl.Popup({
           closeButton: true,
           closeOnClick: false,
@@ -247,14 +259,13 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         `)
           .addTo(map.current)
 
-        // Close popup when user clicks the X button
         selectedPopupRef.current.on("close", () => {
           selectedPopupRef.current = null
         })
       }
 
       showPersistentPopup()
-    }, [selectedEvent, mapLoaded])
+    }, [selectedEvent, mapLoaded, tokenValidated])
 
     useImperativeHandle(ref, () => ({
       flyToLocation: (lat: number, lon: number, zoom = 17, pitch = 45) => {
@@ -270,6 +281,17 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         }
       },
     }))
+
+    if (isCheckingToken) {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-[#e8eef5]">
+          <div className="bg-[#e8eef5] rounded-2xl neu-shadow p-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#0056b3] border-t-transparent mx-auto mb-4"></div>
+            <p className="text-sm text-[#6a7a94]">Initializing map...</p>
+          </div>
+        </div>
+      )
+    }
 
     if (error) {
       return (
@@ -307,7 +329,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       <div className="relative w-full h-full overflow-hidden">
         <div ref={mapContainer} className="absolute inset-0 w-full h-full rounded-xl" />
 
-        {/* Event Details Popup */}
         {selectedEvent && (
           <div className="absolute top-4 right-4 w-80 z-10">
             <Card className="p-4 bg-card border-border shadow-lg">
@@ -351,7 +372,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           </div>
         )}
 
-        {/* Legend */}
         <div className="absolute bottom-4 left-4 z-10">
           <Card className="p-3 bg-card border-border">
             <h4 className="text-xs font-semibold text-foreground mb-2">Event Grade</h4>

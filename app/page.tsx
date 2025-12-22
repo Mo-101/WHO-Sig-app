@@ -387,37 +387,67 @@ export default function DashboardPage() {
           <div className="ticker-content">{tickerText}</div>
         </div>
 
-        <div className="grid grid-cols-4 gap-4 mb-3">
-          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-5 text-center transition-all duration-300">
-            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
-              <span className="text-2xl">📊</span>
+        <div className="grid grid-cols-7 gap-3 mb-3">
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">📊</span>
             </div>
-            <div className="text-4xl font-bold text-[#009edb] leading-tight mb-1">{filteredEvents.length}</div>
-            <div className="text-[11px] text-[#6a7a94] uppercase tracking-wide font-medium">Total Events</div>
+            <div className="text-2xl font-bold text-[#009edb] leading-tight mb-0.5">{filteredEvents.length}</div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">Total Events</div>
           </div>
 
-          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-5 text-center transition-all duration-300">
-            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
-              <span className="text-2xl">✨</span>
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">✨</span>
             </div>
-            <div className="text-4xl font-bold text-[#00c853] leading-tight mb-1">{newCount}</div>
-            <div className="text-[11px] text-[#6a7a94] uppercase tracking-wide font-medium">New Events</div>
+            <div className="text-2xl font-bold text-[#00c853] leading-tight mb-0.5">{newCount}</div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">New Events</div>
           </div>
 
-          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-5 text-center transition-all duration-300">
-            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
-              <span className="text-2xl">⏱️</span>
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">⏱️</span>
             </div>
-            <div className="text-4xl font-bold text-[#ff9800] leading-tight mb-1">{ongoingCount}</div>
-            <div className="text-[11px] text-[#6a7a94] uppercase tracking-wide font-medium">Ongoing</div>
+            <div className="text-2xl font-bold text-[#ff9800] leading-tight mb-0.5">{ongoingCount}</div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">Ongoing</div>
           </div>
 
-          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-5 text-center transition-all duration-300">
-            <div className="w-12 h-12 mx-auto mb-3 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
-              <span className="text-2xl">🚨</span>
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">🚨</span>
             </div>
-            <div className="text-4xl font-bold text-[#ff3355] leading-tight mb-1">{outbreakCount}</div>
-            <div className="text-[11px] text-[#6a7a94] uppercase tracking-wide font-medium">Outbreaks</div>
+            <div className="text-2xl font-bold text-[#ff3355] leading-tight mb-0.5">{outbreakCount}</div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">Outbreaks</div>
+          </div>
+
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">⏳</span>
+            </div>
+            <div className="text-2xl font-bold text-[#9c27b0] leading-tight mb-0.5">
+              {filteredEvents.filter((e) => e.eventType === "Protracted 1").length}
+            </div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">Protracted 1</div>
+          </div>
+
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">⌛</span>
+            </div>
+            <div className="text-2xl font-bold text-[#e91e63] leading-tight mb-0.5">
+              {filteredEvents.filter((e) => e.eventType === "Protracted 2").length}
+            </div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">Protracted 2</div>
+          </div>
+
+          <div className="bg-[#ebfaff] rounded-3xl shadow-[8px_8px_16px_rgba(194,209,224,0.6),-8px_-8px_16px_rgba(255,255,255,0.8)] hover:shadow-[12px_12px_20px_rgba(194,209,224,0.7),-12px_-12px_20px_rgba(255,255,255,0.9)] p-3 text-center transition-all duration-300">
+            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl shadow-[4px_4px_12px_rgba(194,209,224,0.5),-4px_-4px_12px_rgba(255,255,255,0.8)] flex items-center justify-center">
+              <span className="text-xl">🔄</span>
+            </div>
+            <div className="text-2xl font-bold text-[#3f51b5] leading-tight mb-0.5">
+              {filteredEvents.filter((e) => e.eventType === "Protracted 3").length}
+            </div>
+            <div className="text-[9px] text-[#6a7a94] uppercase tracking-wide font-medium">Protracted 3</div>
           </div>
         </div>
 
