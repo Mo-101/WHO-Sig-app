@@ -50,42 +50,6 @@ export const WHO_DATA_SOURCES = [
   },
 ] as const
 
-// Function to check data source availability
-export async function checkDataSourceStatus(sourceId: string) {
-  "use server"
+export type DataSource = (typeof WHO_DATA_SOURCES)[number]
 
-  const source = WHO_DATA_SOURCES.find((s) => s.id === sourceId)
-  if (!source) return null
-
-  try {
-    const response = await fetch(source.url, {
-      method: "HEAD",
-      signal: AbortSignal.timeout(5000),
-    })
-
-    return {
-      sourceId: source.id,
-      name: source.name,
-      status: response.ok ? "online" : "offline",
-      lastChecked: new Date(),
-      statusCode: response.status,
-    }
-  } catch (error) {
-    return {
-      sourceId: source.id,
-      name: source.name,
-      status: "error",
-      lastChecked: new Date(),
-      error: error instanceof Error ? error.message : "Unknown error",
-    }
-  }
-}
-
-// Monitor all data sources
-export async function monitorAllDataSources() {
-  "use server"
-
-  const statuses = await Promise.all(WHO_DATA_SOURCES.map((source) => checkDataSourceStatus(source.id)))
-
-  return statuses.filter((status) => status !== null)
-}
+// Additional updates can be added here if necessary
