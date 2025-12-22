@@ -9,11 +9,9 @@ import { getEnhancedSystemPrompt, getDataSourcesContext, getAnalysisFramework } 
 const azure = createAzure({
   resourceName: "afro-osl-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  // Use cognitiveservices.azure.com domain instead of openai.azure.com
   baseURL: "https://afro-osl-resource.cognitiveservices.azure.com/openai/deployments",
 })
 
-// Use the deployment name directly with correct API version
 const gpt4o = azure("gpt-4o", {
   apiVersion: "2025-01-01-preview",
 })
