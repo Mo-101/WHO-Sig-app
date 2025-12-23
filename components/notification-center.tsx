@@ -106,10 +106,6 @@ export function NotificationCenter({ events }: NotificationCenterProps) {
 
   useEffect(() => {
     const checkForNewEvents = () => {
-      if (!events || !Array.isArray(events)) {
-        return
-      }
-
       events.forEach((event) => {
         const eventDate = new Date(event.reportDate)
         const now = new Date()

@@ -21,33 +21,20 @@ export function DataSourceMonitor() {
   const checkSources = async () => {
     setIsMonitoring(true)
     try {
-      const statusChecks = await Promise.all(
-        WHO_DATA_SOURCES.map(async (source) => {
-          try {
-            const response = await fetch(source.url, { method: "HEAD", mode: "no-cors" })
-            return {
-              sourceId: source.id,
-              name: source.name,
-              status: "online" as const,
-              lastChecked: new Date(),
-              statusCode: 200,
-            }
-          } catch (error) {
-            return {
-              sourceId: source.id,
-              name: source.name,
-              status: "error" as const,
-              lastChecked: new Date(),
-              error: "Unable to reach source",
-            }
-          }
-        }),
-      )
+      // In production, this would call the server action
+      // For now, simulate status checks
+      const mockStatuses: DataSourceStatus[] = WHO_DATA_SOURCES.map((source) => ({
+        sourceId: source.id,
+        name: source.name,
+        status: Math.random() > 0.1 ? "online" : "error",
+        lastChecked: new Date(),
+        statusCode: Math.random() > 0.1 ? 200 : 503,
+      }))
 
-      setStatuses(statusChecks)
+      setStatuses(mockStatuses)
       setLastUpdate(new Date())
     } catch (error) {
-      console.error("[v0] Error checking data sources:", error)
+      console.error("Error checking data sources:", error)
     } finally {
       setIsMonitoring(false)
     }

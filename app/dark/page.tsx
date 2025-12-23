@@ -1,17 +1,18 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
-import { getWHOData, type WHOEvent } from "@/lib/who-data-fetch"
+import { whoEvents } from "@/lib/who-data"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { AIChatbot } from "@/components/ai-chatbot"
+import { ExportSection } from "@/components/export-section"
+import AIChatbot from "@/components/ai-chatbot" // Import AIChatbot
 import type { MapboxMapRef } from "@/components/mapbox-map"
+import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 
-export default function DarkDashboard() {
-  const [whoEvents, setWhoEvents] = useState<WHOEvent[]>([])
-  const [isLoadingData, setIsLoadingData] = useState(true)
-  const [dataError, setDataError] = useState<string | null>(null)
+export default function DarkThemePage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
@@ -23,13 +24,10 @@ export default function DarkDashboard() {
   const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
-  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [whoEvents])
-  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [whoEvents])
-  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [whoEvents])
-  const uniqueYears = useMemo(
-    () => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a),
-    [whoEvents],
-  )
+  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [])
+  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [])
+  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [])
+  const uniqueYears = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a), [])
 
   const filteredEvents = useMemo(() => {
     return whoEvents.filter((event) => {
@@ -48,7 +46,7 @@ export default function DarkDashboard() {
     const g1 = whoEvents.filter((e) => e.grade === "Grade 1").length
     const gu = whoEvents.filter((e) => e.grade === "Ungraded").length
     return { g3, g2, g1, gu }
-  }, [whoEvents])
+  }, [])
 
   const newCount = filteredEvents.filter((e) => e.status === "New").length
   const ongoingCount = filteredEvents.filter((e) => e.status === "Ongoing").length
@@ -100,101 +98,36 @@ export default function DarkDashboard() {
   }
 
   useEffect(() => {
-    async function loadWHOData() {
+    const checkForAnomaliesAndDataSources = async () => {
       try {
-        setIsLoadingData(true)
-        setDataError(null)
-        const data = await getWHOData()
-        setWhoEvents(data)
-        console.log(`[v0] Loaded ${data.length} events from WHO xlsx data source`)
-      } catch (error) {
-        console.error("[v0] Failed to load WHO data:", error)
-        setDataError("Failed to load WHO outbreak data. Please check your connection.")
-      } finally {
-        setIsLoadingData(false)
-      }
-    }
+        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
 
-    loadWHOData()
-
-    // Refresh data every 5 minutes
-    const refreshInterval = setInterval(loadWHOData, 5 * 60 * 1000)
-
-    return () => clearInterval(refreshInterval)
-  }, [])
-
-  useEffect(() => {
-    const checkForAnomaliesAndAlerts = async () => {
-      if (whoEvents.length === 0) return
-
-      try {
-        console.log("[v0] AI monitoring active (Dark Theme) - analyzing WHO outbreak data...")
-
-        const { analyzeDataSourcesForAlerts } = await import("@/lib/ai-analysis")
-        const analysis = await analyzeDataSourcesForAlerts(whoEvents)
-
-        if (analysis.alertGenerated && analysis.alertLevel !== "info") {
-          const newAlert = {
+        if (alertAnalysis.alertGenerated) {
+          const alert = {
             id: crypto.randomUUID(),
-            alertLevel: analysis.alertLevel,
-            riskScore: analysis.alertLevel === "critical" ? 95 : analysis.alertLevel === "high" ? 75 : 50,
-            summary: analysis.summary,
-            keyFindings: analysis.findings,
-            recommendations: analysis.recommendations,
-            affectedCountries: analysis.affectedSources,
+            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+            summary: alertAnalysis.summary,
+            keyFindings: alertAnalysis.findings,
+            recommendations: alertAnalysis.recommendations,
+            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
+            trendAnalysis: alertAnalysis.estimatedImpact,
             timestamp: new Date(),
           }
 
-          setAlerts((prev) => {
-            const exists = prev.some(
-              (a) => a.summary === newAlert.summary && Date.now() - a.timestamp.getTime() < 300000,
-            )
-            if (exists) return prev
-            return [...prev, newAlert]
-          })
-
-          console.log("[v0] AI Alert Generated (Dark):", analysis.alertLevel, "-", analysis.summary)
+          setAlerts((prev) => [...prev, alert])
         }
       } catch (error) {
-        console.error("[v0] AI monitoring error (Dark Theme):", error)
+        console.error("[v0] AI monitoring error:", error)
       }
     }
 
-    checkForAnomaliesAndAlerts()
+    checkForAnomaliesAndDataSources()
 
-    const monitoringInterval = setInterval(checkForAnomaliesAndAlerts, 2 * 60 * 1000)
+    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
 
-    return () => clearInterval(monitoringInterval)
-  }, [whoEvents])
-
-  if (isLoadingData) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#0a1929]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg font-semibold text-gray-300">Loading WHO outbreak data...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (dataError) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#0a1929]">
-        <div className="text-center max-w-md mx-auto p-8 bg-[#1a2332] rounded-3xl shadow-2xl">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-200 mb-2">Data Load Error</h2>
-          <p className="text-gray-400 mb-4">{dataError}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-600 transition-all"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    )
-  }
+    return () => clearInterval(interval)
+  }, [filteredEvents])
 
   return (
     <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
@@ -219,16 +152,15 @@ export default function DarkDashboard() {
           <div className="space-y-1.5">
             {uniqueGrades.map((grade) => (
               <div key={grade} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`grade-${grade}`}
                   checked={selectedGrades.includes(grade)}
-                  onChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
+                  className="data-[state=checked]:bg-[#3b82f6] data-[state=checked]:shadow-[0_0_10px_rgba(59,130,246,0.5)] border-[#334155]"
                 />
-                <label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <Label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {grade}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -254,16 +186,15 @@ export default function DarkDashboard() {
           <div className="space-y-1.5">
             {uniqueEventTypes.map((type) => (
               <div key={type} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`type-${type}`}
                   checked={selectedEventTypes.includes(type)}
-                  onChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
+                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
                 />
-                <label htmlFor={`type-${type}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <Label htmlFor={`type-${type}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {type}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -274,16 +205,15 @@ export default function DarkDashboard() {
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {uniqueCountries.map((country) => (
               <div key={country} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`country-${country}`}
                   checked={selectedCountries.includes(country)}
-                  onChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
+                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
                 />
-                <label htmlFor={`country-${country}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <Label htmlFor={`country-${country}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {country}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -294,19 +224,18 @@ export default function DarkDashboard() {
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {uniqueDiseases.map((disease) => (
               <div key={disease} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`disease-${disease}`}
                   checked={selectedDiseases.includes(disease)}
-                  onChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
+                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
                 />
-                <label
+                <Label
                   htmlFor={`disease-${disease}`}
                   className="text-xs text-[#e2e8f0] cursor-pointer font-medium text-balance leading-tight"
                 >
                   {disease}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -338,12 +267,11 @@ export default function DarkDashboard() {
         </div>
 
         <div className="mt-4">
-          {/* Placeholder for ExportSection component */}
-          {/* <ExportSection
+          <ExportSection
             events={filteredEvents}
             filters={{ selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear }}
             isDark={true}
-          /> */}
+          />
         </div>
       </aside>
 
@@ -370,75 +298,30 @@ export default function DarkDashboard() {
         </div>
 
         {/* Metrics */}
-        <div className="grid grid-cols-7 gap-3 mb-3">
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">📊</span>
-            </div>
-            <div className="text-2xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] mb-0.5">
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
               {filteredEvents.length}
             </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Total Events</div>
+            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Total Events</div>
           </div>
-
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">✨</span>
-            </div>
-            <div className="text-2xl font-bold text-[#00c853] leading-tight drop-shadow-[0_0_8px_rgba(0,200,83,0.6)] mb-0.5">
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
               {newCount}
             </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">New Events</div>
+            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">New Events</div>
           </div>
-
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(255,152,0,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">⏱️</span>
-            </div>
-            <div className="text-2xl font-bold text-[#ff9800] leading-tight drop-shadow-[0_0_8px_rgba(255,152,0,0.6)] mb-0.5">
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
               {ongoingCount}
             </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Ongoing</div>
+            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Ongoing</div>
           </div>
-
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(255,51,85,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">🚨</span>
-            </div>
-            <div className="text-2xl font-bold text-[#ff3355] leading-tight drop-shadow-[0_0_8px_rgba(255,51,85,0.6)] mb-0.5">
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-4 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="text-3xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]">
               {outbreakCount}
             </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Outbreaks</div>
-          </div>
-
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(156,39,176,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">⏳</span>
-            </div>
-            <div className="text-2xl font-bold text-[#9c27b0] leading-tight drop-shadow-[0_0_8px_rgba(156,39,176,0.6)] mb-0.5">
-              {filteredEvents.filter((e) => e.eventType === "Protracted 1").length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 1</div>
-          </div>
-
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(233,30,99,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">⌛</span>
-            </div>
-            <div className="text-2xl font-bold text-[#e91e63] leading-tight drop-shadow-[0_0_8px_rgba(233,30,99,0.6)] mb-0.5">
-              {filteredEvents.filter((e) => e.eventType === "Protracted 2").length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 2</div>
-          </div>
-
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(63,81,181,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">🔄</span>
-            </div>
-            <div className="text-2xl font-bold text-[#3f51b5] leading-tight drop-shadow-[0_0_8px_rgba(63,81,181,0.6)] mb-0.5">
-              {filteredEvents.filter((e) => e.eventType === "Protracted 3").length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 3</div>
+            <div className="text-xs text-[#94a3b8] uppercase tracking-wide mt-1">Outbreaks</div>
           </div>
         </div>
 
