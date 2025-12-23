@@ -212,16 +212,16 @@
   }
 
   .right-sidebar::-webkit-scrollbar-track {
-    background: transparent;
+    background: #ededed;
   }
 
   .right-sidebar::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   .right-sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(237, 237, 237);
   }
 
   /* Firefox scrollbar styling */
