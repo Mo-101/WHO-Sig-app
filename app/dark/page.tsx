@@ -423,56 +423,56 @@ export default function DarkThemePage() {
 
         <div className="grid grid-cols-7 gap-3 mb-3">
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">📊</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Total events.gif" alt="Total Events" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#3b82f6] leading-tight mb-0.5">{filteredEvents.length}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Total Events</div>
           </div>
 
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">✨</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/New events.gif" alt="New Events" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#00c853] leading-tight mb-0.5">{newCount}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">New Events</div>
           </div>
 
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">⏱️</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/ongoing.gif" alt="Ongoing" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#ff9800] leading-tight mb-0.5">{ongoingCount}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Ongoing</div>
           </div>
 
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">🚨</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/outbreak.gif" alt="Outbreaks" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#ff3355] leading-tight mb-0.5">{outbreakCount}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Outbreaks</div>
           </div>
 
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">⏳</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-1.gif" alt="Protracted-1" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#9c27b0] leading-tight mb-0.5">{protracted1Count}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Protracted-1</div>
           </div>
 
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">⏲️</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-2.gif" alt="Protracted-2" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#3f51b5] leading-tight mb-0.5">{protracted2Count}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Protracted-2</div>
           </div>
 
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-8 h-8 mx-auto mb-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl flex items-center justify-center">
-              <span className="text-lg">⌛</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-3.gif" alt="Protracted-3" className="w-full h-full object-cover rounded-full" />
             </div>
             <div className="text-2xl font-bold text-[#e91e63] leading-tight mb-0.5">{protracted3Count}</div>
             <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Protracted-3</div>
