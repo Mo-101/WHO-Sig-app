@@ -446,8 +446,19 @@ export default function DashboardPage() {
               className="p-3 bg-[#ebfaff] rounded-2xl shadow-[6px_6px_14px_#c2d1e0,-6px_-6px_14px_#ffffff] hover:shadow-[8px_8px_18px_#c2d1e0,-8px_-8px_18px_#ffffff] cursor-pointer transition-all"
             >
               <div className="flex items-start gap-3 mb-2">
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-[#009edb] to-[#0056b3] flex items-center justify-center text-white text-base shadow-md">
-                  🏴
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#ebfaff] shadow-[4px_4px_10px_#c2d1e0,-4px_-4px_10px_#ffffff] flex items-center justify-center p-1">
+                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                    <img
+                      src={`/${event.country}.png`}
+                      alt={`${event.country} flag`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                        e.currentTarget.parentElement!.innerHTML =
+                          `<span class="text-[#0056b3] text-xs font-bold">${event.country.substring(0, 2).toUpperCase()}</span>`
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-[#0056b3] uppercase truncate">{event.country}</div>
