@@ -53,7 +53,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             token.length < 20 ||
             !token.startsWith("pk.")
           ) {
-            console.error("[v0] Invalid Mapbox token received:", token ? "Token format invalid" : "Token missing")
+            console.error("[v0] Invalid Mapbox token")
             setError(
               "Mapbox token not configured properly. Please add a valid MAPBOX_ACCESS_TOKEN to your environment variables.",
             )
