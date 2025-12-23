@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react"
 import MapboxMap from "@/components/mapbox-map"
-import { whoEvents } from "@/lib/who-data"
+import { getWHOData, type WHOEvent } from "@/lib/who-data-fetch"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
@@ -17,9 +17,11 @@ import { BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { FilterBlock } from "@/components/filter-block"
 import { GradeSummaryCard } from "@/components/grade-summary-card"
-import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis" // Declare the variable before using it
 
-export default function DashboardPage() {
+export default function Dashboard() {
+  const [whoEvents, setWhoEvents] = useState<WHOEvent[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [dataError, setDataError] = useState<string | null>(null)
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
@@ -36,10 +38,13 @@ export default function DashboardPage() {
   const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
-  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [])
-  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [])
-  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [])
-  const uniqueYears = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a), [])
+  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [whoEvents])
+  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [whoEvents])
+  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [whoEvents])
+  const uniqueYears = useMemo(
+    () => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a),
+    [whoEvents],
+  )
 
   const filteredEvents = useMemo(() => {
     let events = whoEvents.filter((event) => {
@@ -89,7 +94,7 @@ export default function DashboardPage() {
     const g1 = whoEvents.filter((e) => e.grade === "Grade 1").length
     const gu = whoEvents.filter((e) => e.grade === "Ungraded").length
     return { g3, g2, g1, gu }
-  }, [])
+  }, [whoEvents])
 
   const newCount = filteredEvents.filter((e) => e.status === "New").length
   const ongoingCount = filteredEvents.filter((e) => e.status === "Ongoing").length
@@ -167,86 +172,105 @@ export default function DashboardPage() {
     )
   }, [selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, searchFilteredEvents])
 
-  // Generate mock alerts for demonstration until Azure is fixed
   useEffect(() => {
-    const generateMockAlert = () => {
-      const mockAlert = {
-        id: crypto.randomUUID(),
-        alertLevel: "high" as const,
-        riskScore: 85,
-        summary: "Multiple Grade 3 outbreaks detected across 4 African countries requiring immediate attention",
-        keyFindings: [
-          "Cholera outbreak in Malawi shows 15% increase in cases over past 7 days",
-          "Mpox cases reported in 3 neighboring countries suggesting cross-border transmission",
-          "Healthcare capacity concerns in affected regions due to simultaneous outbreaks",
-        ],
-        recommendations: [
-          "Deploy rapid response teams to Malawi and DRC",
-          "Enhance cross-border surveillance and coordination",
-          "Request emergency medical supplies for affected regions",
-        ],
-        affectedCountries: ["Malawi", "DRC", "Nigeria", "Kenya"],
-        trendAnalysis: "Upward trend in case numbers with geographic expansion observed",
-        timestamp: new Date(),
+    async function loadWHOData() {
+      try {
+        setIsLoadingData(true)
+        setDataError(null)
+        const data = await getWHOData()
+        setWhoEvents(data)
+        console.log(`[v0] Loaded ${data.length} events from WHO xlsx data source`)
+      } catch (error) {
+        console.error("[v0] Failed to load WHO data:", error)
+        setDataError("Failed to load WHO outbreak data. Please check your connection.")
+      } finally {
+        setIsLoadingData(false)
       }
-
-      setAlerts((prev) => [...prev, mockAlert])
     }
 
-    // Generate first mock alert after 3 seconds
-    const initialTimer = setTimeout(generateMockAlert, 3000)
+    loadWHOData()
 
-    // Generate periodic mock alerts every 2 minutes
-    const interval = setInterval(generateMockAlert, 120000)
+    const refreshInterval = setInterval(loadWHOData, 5 * 60 * 1000)
 
-    return () => {
-      clearTimeout(initialTimer)
-      clearInterval(interval)
-    }
+    return () => clearInterval(refreshInterval)
   }, [])
 
-  // AI monitoring code
   useEffect(() => {
-    const checkForAnomaliesAndDataSources = async () => {
-      try {
-        console.log("[v0] Running AI analysis on outbreak data...")
-        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
+    const checkForAnomaliesAndAlerts = async () => {
+      if (whoEvents.length === 0) return
 
-        if (alertAnalysis.alertGenerated) {
-          console.log("[v0] Alert generated:", alertAnalysis.alertLevel)
-          const alert = {
+      try {
+        console.log("[v0] AI monitoring active - analyzing WHO outbreak data...")
+
+        // Analyze using WHO-trained AI system
+        const { analyzeDataSourcesForAlerts } = await import("@/lib/ai-analysis")
+        const analysis = await analyzeDataSourcesForAlerts(whoEvents)
+
+        if (analysis.alertGenerated && analysis.alertLevel !== "info") {
+          const newAlert = {
             id: crypto.randomUUID(),
-            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
-            riskScore:
-              alertAnalysis.alertLevel === "critical"
-                ? 95
-                : alertAnalysis.alertLevel === "high"
-                  ? 85
-                  : alertAnalysis.alertLevel === "medium"
-                    ? 70
-                    : 50,
-            summary: alertAnalysis.summary,
-            keyFindings: alertAnalysis.findings,
-            recommendations: alertAnalysis.recommendations,
-            affectedCountries: Array.from(new Set(filteredEvents.slice(0, 10).map((e) => e.country))),
-            trendAnalysis: alertAnalysis.estimatedImpact,
+            level: analysis.alertLevel,
+            summary: analysis.summary,
+            findings: analysis.findings,
+            recommendations: analysis.recommendations,
+            affectedCountries: analysis.affectedSources,
             timestamp: new Date(),
+            riskScore: analysis.alertLevel === "critical" ? 95 : analysis.alertLevel === "high" ? 75 : 50,
           }
 
-          setAlerts((prev) => [...prev, alert])
-        } else {
-          console.log("[v0] No alerts generated - situation normal")
+          setAlerts((prev) => {
+            // Avoid duplicate alerts
+            const exists = prev.some(
+              (a) => a.summary === newAlert.summary && Date.now() - a.timestamp.getTime() < 300000, // 5 minutes
+            )
+            if (exists) return prev
+            return [...prev, newAlert]
+          })
+
+          console.log("[v0] AI Alert Generated:", analysis.alertLevel, "-", analysis.summary)
         }
       } catch (error) {
         console.error("[v0] AI monitoring error:", error)
       }
     }
 
-    checkForAnomaliesAndDataSources()
-    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+    // Run immediately
+    checkForAnomaliesAndAlerts()
 
-    return () => clearInterval(interval)
-  }, [filteredEvents])
+    // Check every 2 minutes
+    const monitoringInterval = setInterval(checkForAnomaliesAndAlerts, 2 * 60 * 1000)
+
+    return () => clearInterval(monitoringInterval)
+  }, [whoEvents])
+
+  if (isLoadingData) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#ebfaff]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-semibold text-gray-700">Loading WHO outbreak data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (dataError) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#ebfaff]">
+        <div className="text-center max-w-md mx-auto p-8 bg-white rounded-3xl shadow-neu">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Data Load Error</h2>
+          <p className="text-gray-600 mb-4">{dataError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-600 transition-neu"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-screen bg-[#ebfaff] font-sans overflow-hidden">
@@ -471,7 +495,7 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] bg-[#ebfaff] rounded-3xl shadow-[10px_10px_25px_#c2d1e0,-10px_-10px_25px_#ffffff] p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
+      <aside className="fixed right-2.5 top-2.5 bottom-1.5 w-[260px] bg-[#ebfaff] rounded-3xl shadow-[10px_10px_15px_#c2d1e0,-10px_-10px_25px_#ffffff] p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
         <h3 className="text-xs font-bold text-[#0056b3] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#d1d9e6] flex items-center gap-2">
           <span className="text-base">📡</span> Recent Signals
         </h3>

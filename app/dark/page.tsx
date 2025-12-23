@@ -1,18 +1,17 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
-import { whoEvents } from "@/lib/who-data"
+import { getWHOData, type WHOEvent } from "@/lib/who-data-fetch"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { ExportSection } from "@/components/export-section"
-import AIChatbot from "@/components/ai-chatbot" // Import AIChatbot
+import { AIChatbot } from "@/components/ai-chatbot"
 import type { MapboxMapRef } from "@/components/mapbox-map"
-import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 
-export default function DarkThemePage() {
+export default function DarkDashboard() {
+  const [whoEvents, setWhoEvents] = useState<WHOEvent[]>([])
+  const [isLoadingData, setIsLoadingData] = useState(true)
+  const [dataError, setDataError] = useState<string | null>(null)
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
@@ -24,10 +23,13 @@ export default function DarkThemePage() {
   const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
-  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [])
-  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [])
-  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [])
-  const uniqueYears = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a), [])
+  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [whoEvents])
+  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [whoEvents])
+  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [whoEvents])
+  const uniqueYears = useMemo(
+    () => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a),
+    [whoEvents],
+  )
 
   const filteredEvents = useMemo(() => {
     return whoEvents.filter((event) => {
@@ -46,7 +48,7 @@ export default function DarkThemePage() {
     const g1 = whoEvents.filter((e) => e.grade === "Grade 1").length
     const gu = whoEvents.filter((e) => e.grade === "Ungraded").length
     return { g3, g2, g1, gu }
-  }, [])
+  }, [whoEvents])
 
   const newCount = filteredEvents.filter((e) => e.status === "New").length
   const ongoingCount = filteredEvents.filter((e) => e.status === "Ongoing").length
@@ -98,49 +100,101 @@ export default function DarkThemePage() {
   }
 
   useEffect(() => {
-    const checkForAnomaliesAndDataSources = async () => {
+    async function loadWHOData() {
       try {
-        console.log("[v0] Running AI analysis on outbreak data (Dark Theme)...")
-        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
-
-        if (alertAnalysis.alertGenerated) {
-          console.log("[v0] Alert generated:", alertAnalysis.alertLevel)
-          const alert = {
-            id: crypto.randomUUID(),
-            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
-            riskScore:
-              alertAnalysis.alertLevel === "critical"
-                ? 95
-                : alertAnalysis.alertLevel === "high"
-                  ? 85
-                  : alertAnalysis.alertLevel === "medium"
-                    ? 70
-                    : 50,
-            summary: alertAnalysis.summary,
-            keyFindings: alertAnalysis.findings,
-            recommendations: alertAnalysis.recommendations,
-            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
-            trendAnalysis: alertAnalysis.estimatedImpact,
-            timestamp: new Date(),
-          }
-
-          setAlerts((prev) => [...prev, alert])
-        } else {
-          console.log("[v0] No alerts generated - situation normal")
-        }
+        setIsLoadingData(true)
+        setDataError(null)
+        const data = await getWHOData()
+        setWhoEvents(data)
+        console.log(`[v0] Loaded ${data.length} events from WHO xlsx data source`)
       } catch (error) {
-        console.error("[v0] AI monitoring error:", error)
+        console.error("[v0] Failed to load WHO data:", error)
+        setDataError("Failed to load WHO outbreak data. Please check your connection.")
+      } finally {
+        setIsLoadingData(false)
       }
     }
 
-    // Run initial check
-    checkForAnomaliesAndDataSources()
+    loadWHOData()
 
-    // Run every 2 minutes
-    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
+    // Refresh data every 5 minutes
+    const refreshInterval = setInterval(loadWHOData, 5 * 60 * 1000)
 
-    return () => clearInterval(interval)
-  }, [filteredEvents])
+    return () => clearInterval(refreshInterval)
+  }, [])
+
+  useEffect(() => {
+    const checkForAnomaliesAndAlerts = async () => {
+      if (whoEvents.length === 0) return
+
+      try {
+        console.log("[v0] AI monitoring active (Dark Theme) - analyzing WHO outbreak data...")
+
+        const { analyzeDataSourcesForAlerts } = await import("@/lib/ai-analysis")
+        const analysis = await analyzeDataSourcesForAlerts(whoEvents)
+
+        if (analysis.alertGenerated && analysis.alertLevel !== "info") {
+          const newAlert = {
+            id: crypto.randomUUID(),
+            alertLevel: analysis.alertLevel,
+            riskScore: analysis.alertLevel === "critical" ? 95 : analysis.alertLevel === "high" ? 75 : 50,
+            summary: analysis.summary,
+            keyFindings: analysis.findings,
+            recommendations: analysis.recommendations,
+            affectedCountries: analysis.affectedSources,
+            timestamp: new Date(),
+          }
+
+          setAlerts((prev) => {
+            const exists = prev.some(
+              (a) => a.summary === newAlert.summary && Date.now() - a.timestamp.getTime() < 300000,
+            )
+            if (exists) return prev
+            return [...prev, newAlert]
+          })
+
+          console.log("[v0] AI Alert Generated (Dark):", analysis.alertLevel, "-", analysis.summary)
+        }
+      } catch (error) {
+        console.error("[v0] AI monitoring error (Dark Theme):", error)
+      }
+    }
+
+    checkForAnomaliesAndAlerts()
+
+    const monitoringInterval = setInterval(checkForAnomaliesAndAlerts, 2 * 60 * 1000)
+
+    return () => clearInterval(monitoringInterval)
+  }, [whoEvents])
+
+  if (isLoadingData) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0a1929]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-semibold text-gray-300">Loading WHO outbreak data...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (dataError) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-[#0a1929]">
+        <div className="text-center max-w-md mx-auto p-8 bg-[#1a2332] rounded-3xl shadow-2xl">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-gray-200 mb-2">Data Load Error</h2>
+          <p className="text-gray-400 mb-4">{dataError}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-600 transition-all"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
@@ -165,15 +219,16 @@ export default function DarkThemePage() {
           <div className="space-y-1.5">
             {uniqueGrades.map((grade) => (
               <div key={grade} className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id={`grade-${grade}`}
                   checked={selectedGrades.includes(grade)}
-                  onCheckedChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
-                  className="data-[state=checked]:bg-[#3b82f6] data-[state=checked]:shadow-[0_0_10px_rgba(59,130,246,0.5)] border-[#334155]"
+                  onChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
+                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
                 />
-                <Label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {grade}
-                </Label>
+                </label>
               </div>
             ))}
           </div>
@@ -199,15 +254,16 @@ export default function DarkThemePage() {
           <div className="space-y-1.5">
             {uniqueEventTypes.map((type) => (
               <div key={type} className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id={`type-${type}`}
                   checked={selectedEventTypes.includes(type)}
-                  onCheckedChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
-                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
+                  onChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
+                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
                 />
-                <Label htmlFor={`type-${type}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <label htmlFor={`type-${type}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {type}
-                </Label>
+                </label>
               </div>
             ))}
           </div>
@@ -218,15 +274,16 @@ export default function DarkThemePage() {
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {uniqueCountries.map((country) => (
               <div key={country} className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id={`country-${country}`}
                   checked={selectedCountries.includes(country)}
-                  onCheckedChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
-                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
+                  onChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
+                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
                 />
-                <Label htmlFor={`country-${country}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <label htmlFor={`country-${country}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {country}
-                </Label>
+                </label>
               </div>
             ))}
           </div>
@@ -237,18 +294,19 @@ export default function DarkThemePage() {
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {uniqueDiseases.map((disease) => (
               <div key={disease} className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="checkbox"
                   id={`disease-${disease}`}
                   checked={selectedDiseases.includes(disease)}
-                  onCheckedChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
-                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
+                  onChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
+                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
                 />
-                <Label
+                <label
                   htmlFor={`disease-${disease}`}
                   className="text-xs text-[#e2e8f0] cursor-pointer font-medium text-balance leading-tight"
                 >
                   {disease}
-                </Label>
+                </label>
               </div>
             ))}
           </div>
@@ -280,11 +338,12 @@ export default function DarkThemePage() {
         </div>
 
         <div className="mt-4">
-          <ExportSection
+          {/* Placeholder for ExportSection component */}
+          {/* <ExportSection
             events={filteredEvents}
             filters={{ selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear }}
             isDark={true}
-          />
+          /> */}
         </div>
       </aside>
 
