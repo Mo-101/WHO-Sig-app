@@ -1,17 +1,26 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
-import { getWHOData, type WHOEvent } from "@/lib/who-data-fetch"
+import { whoEvents } from "@/lib/who-data"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { AIChatbot } from "@/components/ai-chatbot"
+import { ExportSection } from "@/components/export-section"
+import AIChatbot from "@/components/ai-chatbot" // Import AIChatbot
+import { DataSourceMonitor } from "@/components/data-source-monitor"
+import { AdvancedSearch } from "@/components/advanced-search"
+import { FilterPresets } from "@/components/filter-presets"
+import { DateRangePicker } from "@/components/date-range-picker"
+import { NotificationCenter } from "@/components/notification-center"
+import { EventDetailModal } from "@/components/event-detail-modal"
+import { BarChart3 } from "lucide-react"
+import Link from "next/link"
 import type { MapboxMapRef } from "@/components/mapbox-map"
+import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 
-export default function DarkDashboard() {
-  const [whoEvents, setWhoEvents] = useState<WHOEvent[]>([])
-  const [isLoadingData, setIsLoadingData] = useState(true)
-  const [dataError, setDataError] = useState<string | null>(null)
+export default function DarkThemePage() {
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
@@ -21,26 +30,50 @@ export default function DarkDashboard() {
   const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
   const mapRef = useRef<MapboxMapRef>(null)
   const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
+  const [showCharts, setShowCharts] = useState(true)
+  const [startDate, setStartDate] = useState("2025-12-01")
+  const [endDate, setEndDate] = useState("2025-12-31")
+  const [searchFilteredEvents, setSearchFilteredEvents] = useState<any[]>([])
+  const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
-  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [whoEvents])
-  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [whoEvents])
-  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [whoEvents])
-  const uniqueYears = useMemo(
-    () => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a),
-    [whoEvents],
-  )
+  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [])
+  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [])
+  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [])
+  const uniqueYears = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a), [])
 
   const filteredEvents = useMemo(() => {
-    return whoEvents.filter((event) => {
+    let events = whoEvents.filter((event) => {
       const gradeMatch = selectedGrades.length === 0 || selectedGrades.includes(event.grade)
       const countryMatch = selectedCountries.length === 0 || selectedCountries.includes(event.country)
       const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.includes(event.disease)
       const eventTypeMatch = selectedEventTypes.length === 0 || selectedEventTypes.includes(event.eventType)
       const yearMatch = event.year === selectedYear
-      return gradeMatch && countryMatch && diseaseMatch && eventTypeMatch && yearMatch
+
+      const eventDate = new Date(event.reportDate)
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const dateMatch = eventDate >= start && eventDate <= end
+
+      return gradeMatch && countryMatch && diseaseMatch && eventTypeMatch && yearMatch && dateMatch
     })
-  }, [selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear])
+
+    if (searchFilteredEvents.length > 0) {
+      const searchIds = new Set(searchFilteredEvents.map((e) => e.id))
+      events = events.filter((e) => searchIds.has(e.id))
+    }
+
+    return events
+  }, [
+    selectedGrades,
+    selectedCountries,
+    selectedDiseases,
+    selectedEventTypes,
+    selectedYear,
+    startDate,
+    endDate,
+    searchFilteredEvents,
+  ])
 
   const gradeSummary = useMemo(() => {
     const g3 = whoEvents.filter((e) => e.grade === "Grade 3").length
@@ -48,11 +81,14 @@ export default function DarkDashboard() {
     const g1 = whoEvents.filter((e) => e.grade === "Grade 1").length
     const gu = whoEvents.filter((e) => e.grade === "Ungraded").length
     return { g3, g2, g1, gu }
-  }, [whoEvents])
+  }, [])
 
   const newCount = filteredEvents.filter((e) => e.status === "New").length
   const ongoingCount = filteredEvents.filter((e) => e.status === "Ongoing").length
   const outbreakCount = filteredEvents.filter((e) => e.eventType === "Outbreak").length
+  const protracted1Count = whoEvents.filter((e) => e.eventType.includes("Protracted-1")).length
+  const protracted2Count = whoEvents.filter((e) => e.eventType.includes("Protracted-2")).length
+  const protracted3Count = whoEvents.filter((e) => e.eventType.includes("Protracted-3")).length
 
   const toggleFilter = (value: string, selectedValues: string[], setSelectedValues: (values: string[]) => void) => {
     setSelectedValues(
@@ -74,12 +110,52 @@ export default function DarkDashboard() {
   }
 
   const handleEventClick = (event: any) => {
+    setSelectedEventForModal(event)
+  }
+
+  const handleModalJumpToLocation = (event: any) => {
     if (mapRef.current) {
       mapRef.current.flyToLocation(event.lat, event.lon, 17, 45)
       setSelectedMapEvent(event)
       setSelectedCountries([event.country])
     }
+    setSelectedEventForModal(null)
   }
+
+  const handleApplyPreset = (preset: any) => {
+    setSelectedGrades(preset.filters.grades)
+    setSelectedCountries(preset.filters.countries)
+    setSelectedDiseases(preset.filters.diseases)
+    setSelectedEventTypes(preset.filters.eventTypes)
+    setSelectedYear(preset.filters.year)
+  }
+
+  const handleClearFilters = () => {
+    setSelectedGrades([])
+    setSelectedCountries([])
+    setSelectedDiseases([])
+    setSelectedEventTypes([])
+    setSearchFilteredEvents([])
+  }
+
+  const getRelatedEvents = (event: any) => {
+    return whoEvents.filter(
+      (e) =>
+        e.id !== event.id &&
+        (e.country === event.country || e.disease === event.disease) &&
+        Math.abs(new Date(e.reportDate).getTime() - new Date(event.reportDate).getTime()) < 30 * 24 * 60 * 60 * 1000,
+    )
+  }
+
+  const activeFilterCount = useMemo(() => {
+    return (
+      selectedGrades.length +
+      selectedCountries.length +
+      selectedDiseases.length +
+      selectedEventTypes.length +
+      (searchFilteredEvents.length > 0 ? 1 : 0)
+    )
+  }, [selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, searchFilteredEvents])
 
   const tickerEvents = useMemo(() => {
     return filteredEvents.slice(0, 8).map((event) => ({
@@ -100,101 +176,36 @@ export default function DarkDashboard() {
   }
 
   useEffect(() => {
-    async function loadWHOData() {
+    const checkForAnomaliesAndDataSources = async () => {
       try {
-        setIsLoadingData(true)
-        setDataError(null)
-        const data = await getWHOData()
-        setWhoEvents(data)
-        console.log(`[v0] Loaded ${data.length} events from WHO xlsx data source`)
-      } catch (error) {
-        console.error("[v0] Failed to load WHO data:", error)
-        setDataError("Failed to load WHO outbreak data. Please check your connection.")
-      } finally {
-        setIsLoadingData(false)
-      }
-    }
+        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
 
-    loadWHOData()
-
-    // Refresh data every 5 minutes
-    const refreshInterval = setInterval(loadWHOData, 5 * 60 * 1000)
-
-    return () => clearInterval(refreshInterval)
-  }, [])
-
-  useEffect(() => {
-    const checkForAnomaliesAndAlerts = async () => {
-      if (whoEvents.length === 0) return
-
-      try {
-        console.log("[v0] AI monitoring active (Dark Theme) - analyzing WHO outbreak data...")
-
-        const { analyzeDataSourcesForAlerts } = await import("@/lib/ai-analysis")
-        const analysis = await analyzeDataSourcesForAlerts(whoEvents)
-
-        if (analysis.alertGenerated && analysis.alertLevel !== "info") {
-          const newAlert = {
+        if (alertAnalysis.alertGenerated) {
+          const alert = {
             id: crypto.randomUUID(),
-            alertLevel: analysis.alertLevel,
-            riskScore: analysis.alertLevel === "critical" ? 95 : analysis.alertLevel === "high" ? 75 : 50,
-            summary: analysis.summary,
-            keyFindings: analysis.findings,
-            recommendations: analysis.recommendations,
-            affectedCountries: analysis.affectedSources,
+            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
+            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
+            summary: alertAnalysis.summary,
+            keyFindings: alertAnalysis.findings,
+            recommendations: alertAnalysis.recommendations,
+            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
+            trendAnalysis: alertAnalysis.estimatedImpact,
             timestamp: new Date(),
           }
 
-          setAlerts((prev) => {
-            const exists = prev.some(
-              (a) => a.summary === newAlert.summary && Date.now() - a.timestamp.getTime() < 300000,
-            )
-            if (exists) return prev
-            return [...prev, newAlert]
-          })
-
-          console.log("[v0] AI Alert Generated (Dark):", analysis.alertLevel, "-", analysis.summary)
+          setAlerts((prev) => [...prev, alert])
         }
       } catch (error) {
-        console.error("[v0] AI monitoring error (Dark Theme):", error)
+        console.error("[v0] AI monitoring error:", error)
       }
     }
 
-    checkForAnomaliesAndAlerts()
+    checkForAnomaliesAndDataSources()
 
-    const monitoringInterval = setInterval(checkForAnomaliesAndAlerts, 2 * 60 * 1000)
+    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
 
-    return () => clearInterval(monitoringInterval)
-  }, [whoEvents])
-
-  if (isLoadingData) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#0a1929]">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg font-semibold text-gray-300">Loading WHO outbreak data...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (dataError) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[#0a1929]">
-        <div className="text-center max-w-md mx-auto p-8 bg-[#1a2332] rounded-3xl shadow-2xl">
-          <div className="text-red-500 text-5xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-gray-200 mb-2">Data Load Error</h2>
-          <p className="text-gray-400 mb-4">{dataError}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-600 transition-all"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    )
-  }
+    return () => clearInterval(interval)
+  }, [filteredEvents])
 
   return (
     <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
@@ -210,8 +221,45 @@ export default function DarkDashboard() {
 
       <AIChatbot events={filteredEvents} />
 
-      {/* Left Sidebar */}
+      {selectedEventForModal && (
+        <EventDetailModal
+          event={selectedEventForModal}
+          relatedEvents={getRelatedEvents(selectedEventForModal)}
+          onClose={() => setSelectedEventForModal(null)}
+          onJumpToLocation={handleModalJumpToLocation}
+        />
+      )}
+
       <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-y-auto z-20 border border-white/10 custom-scrollbar-dark">
+        <div className="mb-4">
+          <AdvancedSearch events={whoEvents} onSearchResults={setSearchFilteredEvents} isDark={true} />
+        </div>
+
+        <div className="mb-4">
+          <FilterPresets onApplyPreset={handleApplyPreset} isDark={true} />
+        </div>
+
+        <div className="mb-4">
+          <DateRangePicker
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            isDark={true}
+          />
+        </div>
+
+        {activeFilterCount > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={handleClearFilters}
+              className="w-full px-4 py-2 bg-[#1e293b] hover:bg-[#334155] text-[#e2e8f0] text-xs rounded-xl transition-all border border-[#334155]"
+            >
+              Clear All Filters ({activeFilterCount})
+            </button>
+          </div>
+        )}
+
         <div className="mb-3">
           <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2 flex items-center gap-2">
             <span className="text-base">🎛️</span> Filter by Grade
@@ -219,16 +267,15 @@ export default function DarkDashboard() {
           <div className="space-y-1.5">
             {uniqueGrades.map((grade) => (
               <div key={grade} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`grade-${grade}`}
                   checked={selectedGrades.includes(grade)}
-                  onChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(grade, selectedGrades, setSelectedGrades)}
+                  className="data-[state=checked]:bg-[#3b82f6] data-[state=checked]:shadow-[0_0_10px_rgba(59,130,246,0.5)] border-[#334155]"
                 />
-                <label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <Label htmlFor={`grade-${grade}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {grade}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -254,16 +301,15 @@ export default function DarkDashboard() {
           <div className="space-y-1.5">
             {uniqueEventTypes.map((type) => (
               <div key={type} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`type-${type}`}
                   checked={selectedEventTypes.includes(type)}
-                  onChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(type, selectedEventTypes, setSelectedEventTypes)}
+                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
                 />
-                <label htmlFor={`type-${type}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <Label htmlFor={`type-${type}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {type}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -274,16 +320,15 @@ export default function DarkDashboard() {
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {uniqueCountries.map((country) => (
               <div key={country} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`country-${country}`}
                   checked={selectedCountries.includes(country)}
-                  onChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(country, selectedCountries, setSelectedCountries)}
+                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
                 />
-                <label htmlFor={`country-${country}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
+                <Label htmlFor={`country-${country}`} className="text-xs text-[#e2e8f0] cursor-pointer font-medium">
                   {country}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
@@ -294,25 +339,23 @@ export default function DarkDashboard() {
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {uniqueDiseases.map((disease) => (
               <div key={disease} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`disease-${disease}`}
                   checked={selectedDiseases.includes(disease)}
-                  onChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
-                  className="form-checkbox h-4 w-4 text-[#3b82f6] rounded border-[#334155]"
+                  onCheckedChange={() => toggleFilter(disease, selectedDiseases, setSelectedDiseases)}
+                  className="data-[state=checked]:bg-[#3b82f6] border-[#334155]"
                 />
-                <label
+                <Label
                   htmlFor={`disease-${disease}`}
                   className="text-xs text-[#e2e8f0] cursor-pointer font-medium text-balance leading-tight"
                 >
                   {disease}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Grade Summary */}
         <div className="mb-4">
           <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-wide mb-2 flex items-center gap-2">
             <span className="text-base">📊</span> Grade Summary
@@ -338,18 +381,19 @@ export default function DarkDashboard() {
         </div>
 
         <div className="mt-4">
-          {/* Placeholder for ExportSection component */}
-          {/* <ExportSection
+          <DataSourceMonitor isDark={true} />
+        </div>
+
+        <div className="mt-4">
+          <ExportSection
             events={filteredEvents}
             filters={{ selectedGrades, selectedCountries, selectedDiseases, selectedEventTypes, selectedYear }}
             isDark={true}
-          /> */}
+          />
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
-        {/* Header */}
         <header className="dark-glass rounded-2xl shadow-2xl p-3 mb-3 flex items-center justify-between border border-white/10">
           <div>
             <h1 className="text-lg font-bold text-[#e2e8f0] flex items-center gap-2">
@@ -358,6 +402,14 @@ export default function DarkDashboard() {
             <p className="text-[11px] text-[#94a3b8]">Live tracking of graded events in the African region</p>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/analytics"
+              className="bg-[#1e293b] p-2.5 rounded-xl border border-[#334155] hover:bg-[#334155] transition-all"
+              title="View Analytics"
+            >
+              <BarChart3 className="w-5 h-5 text-[#3b82f6]" />
+            </Link>
+            <NotificationCenter events={filteredEvents} isDark={true} />
             <ThemeToggle isDark={true} />
             <span className="px-2.5 py-1 bg-gradient-to-r from-[#00c853] to-[#00e676] text-white text-[10px] font-semibold rounded-xl shadow-[0_0_15px_rgba(0,200,83,0.5)] animate-pulse">
               ● LIVE
@@ -369,113 +421,78 @@ export default function DarkDashboard() {
           <div className="ticker-content">{tickerText}</div>
         </div>
 
-        {/* Metrics */}
         <div className="grid grid-cols-7 gap-3 mb-3">
           <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">📊</span>
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Total events.gif" alt="Total Events" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#3b82f6] leading-tight drop-shadow-[0_0_8px_rgba(59,130,246,0.6)] mb-0.5">
-              {filteredEvents.length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Total Events</div>
+            <div className="text-2xl font-bold text-[#3b82f6] leading-tight mb-0.5">{filteredEvents.length}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Total Events</div>
           </div>
 
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(0,200,83,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-green-400 to-emerald-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">✨</span>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/New events.gif" alt="New Events" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#00c853] leading-tight drop-shadow-[0_0_8px_rgba(0,200,83,0.6)] mb-0.5">
-              {newCount}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">New Events</div>
+            <div className="text-2xl font-bold text-[#00c853] leading-tight mb-0.5">{newCount}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">New Events</div>
           </div>
 
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(255,152,0,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">⏱️</span>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/ongoing.gif" alt="Ongoing" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#ff9800] leading-tight drop-shadow-[0_0_8px_rgba(255,152,0,0.6)] mb-0.5">
-              {ongoingCount}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Ongoing</div>
+            <div className="text-2xl font-bold text-[#ff9800] leading-tight mb-0.5">{ongoingCount}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Ongoing</div>
           </div>
 
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(255,51,85,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">🚨</span>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/outbreak.gif" alt="Outbreaks" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#ff3355] leading-tight drop-shadow-[0_0_8px_rgba(255,51,85,0.6)] mb-0.5">
-              {outbreakCount}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Outbreaks</div>
+            <div className="text-2xl font-bold text-[#ff3355] leading-tight mb-0.5">{outbreakCount}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Outbreaks</div>
           </div>
 
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(156,39,176,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">⏳</span>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-1.gif" alt="Protracted-1" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#9c27b0] leading-tight drop-shadow-[0_0_8px_rgba(156,39,176,0.6)] mb-0.5">
-              {filteredEvents.filter((e) => e.eventType === "Protracted 1").length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 1</div>
+            <div className="text-2xl font-bold text-[#9c27b0] leading-tight mb-0.5">{protracted1Count}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Protracted-1</div>
           </div>
 
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(233,30,99,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-pink-400 to-pink-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">⌛</span>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-2.gif" alt="Protracted-2" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#e91e63] leading-tight drop-shadow-[0_0_8px_rgba(233,30,99,0.6)] mb-0.5">
-              {filteredEvents.filter((e) => e.eventType === "Protracted 2").length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 2</div>
+            <div className="text-2xl font-bold text-[#3f51b5] leading-tight mb-0.5">{protracted2Count}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Protracted-2</div>
           </div>
 
-          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(63,81,181,0.3)] transition-all">
-            <div className="w-10 h-10 mx-auto mb-2 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-2xl shadow-[4px_4px_12px_rgba(0,0,0,0.5)] flex items-center justify-center">
-              <span className="text-xl">🔄</span>
+          <div className="dark-card-elevated rounded-2xl shadow-2xl p-3 text-center border border-white/5 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all">
+            <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#1e293b] shadow-[4px_4px_10px_#0f172a,-4px_-4px_10px_#334155] p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-3.gif" alt="Protracted-3" className="w-full h-full object-cover rounded-full" />
             </div>
-            <div className="text-2xl font-bold text-[#3f51b5] leading-tight drop-shadow-[0_0_8px_rgba(63,81,181,0.6)] mb-0.5">
-              {filteredEvents.filter((e) => e.eventType === "Protracted 3").length}
-            </div>
-            <div className="text-[9px] text-[#94a3b8] uppercase tracking-wide">Protracted 3</div>
+            <div className="text-2xl font-bold text-[#e91e63] leading-tight mb-0.5">{protracted3Count}</div>
+            <div className="text-[10px] text-[#94a3b8] uppercase tracking-wide font-medium">Protracted-3</div>
           </div>
         </div>
 
-        {/* Map */}
-        <div className="dark-glass rounded-2xl shadow-2xl p-4 border border-white/10 flex-1">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xs font-semibold text-[#3b82f6] uppercase tracking-wide flex items-center gap-2">
-              <span className="text-base">📍</span> Event Distribution
-            </h2>
-            <div className="flex gap-3">
-              <div className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff3355] shadow-[0_0_8px_rgba(255,51,85,0.6)]" />
-                Grade 3
-              </div>
-              <div className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff9933] shadow-[0_0_8px_rgba(255,153,51,0.6)]" />
-                Grade 2
-              </div>
-              <div className="flex items-center gap-1 text-[10px] text-[#94a3b8]">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ffcc00] shadow-[0_0_8px_rgba(255,204,0,0.6)]" />
-                Grade 1
-              </div>
-            </div>
-          </div>
-          <div className="rounded-2xl overflow-hidden h-full">
-            <MapboxMap
-              ref={mapRef}
-              events={filteredEvents}
-              mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf"
-              selectedEvent={selectedMapEvent}
-              setSelectedEvent={setSelectedMapEvent}
-            />
-          </div>
+        <div
+          className="dark-glass rounded-2xl shadow-2xl border border-white/10 overflow-hidden relative"
+          style={{ height: "calc(100vh - 250px)" }}
+        >
+          <MapboxMap
+            ref={mapRef}
+            events={filteredEvents}
+            mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf"
+            selectedEvent={selectedMapEvent}
+            setSelectedEvent={setSelectedMapEvent}
+          />
         </div>
       </main>
 
-      {/* Right Sidebar - Signal Feed */}
       <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-hidden flex flex-col z-20 right-sidebar border border-white/10 custom-scrollbar-dark">
         <h3 className="text-xs font-bold text-[#3b82f6] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#334155] flex items-center gap-2">
           <span className="text-base">📡</span> Recent Signals
@@ -485,31 +502,48 @@ export default function DarkDashboard() {
             <div
               key={event.id}
               onClick={() => handleEventClick(event)}
-              className="pb-3 border-b border-[#334155] last:border-none cursor-pointer hover:bg-[#0f1419]/50 rounded-lg p-2 transition-all hover:shadow-[0_0_15px_rgba(59,130,246,0.2)] hover:border-[#3b82f6]/30 border border-transparent"
+              className="p-3 bg-[#0f1419]/50 rounded-2xl border border-[#334155] hover:border-[#3b82f6]/50 cursor-pointer transition-all hover:shadow-[0_0_15px_rgba(59,130,246,0.2)]"
             >
-              <div className="flex items-start gap-2 mb-1">
-                <div className="flex-shrink-0 w-5 h-5 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#1e40af] flex items-center justify-center text-white text-[10px] font-bold shadow-[0_0_10px_rgba(59,130,246,0.5)]">
-                  {idx + 1}
+              <div className="flex items-start gap-3 mb-2">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#1e293b] border border-[#334155] flex items-center justify-center p-0.5">
+                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                    <img
+                      src={`/${event.country}.png`}
+                      alt={`${event.country} flag`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                        e.currentTarget.parentElement!.innerHTML =
+                          `<span class="text-[#3b82f6] text-xs font-bold">${event.country.substring(0, 2).toUpperCase()}</span>`
+                      }}
+                    />
+                  </div>
                 </div>
-                <span className="text-[11px] font-semibold text-[#3b82f6] uppercase">{event.country}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-bold text-[#3b82f6] uppercase truncate">{event.country}</div>
+                  <div className="text-[10px] text-[#94a3b8]">#{idx + 1}</div>
+                </div>
               </div>
-              <div className="ml-7 text-xs font-semibold text-[#e2e8f0] mb-1">{event.disease}</div>
-              <div className="ml-7 text-[9px] text-[#94a3b8] mb-1">
+              <div className="text-xs font-semibold text-[#e2e8f0] mb-1">{event.disease}</div>
+              <div className="text-[9px] text-[#94a3b8] mb-1">
                 {event.eventType} • {event.status}
               </div>
-              <div className="ml-7 text-[10px] text-[#cbd5e1] leading-relaxed mb-1">{event.description}</div>
-              <div
-                className={`ml-7 inline-block text-[9px] px-2 py-0.5 rounded ${
-                  event.grade === "Grade 3"
-                    ? "bg-[#ff3355]/20 text-[#ff3355] shadow-[0_0_8px_rgba(255,51,85,0.3)]"
-                    : event.grade === "Grade 2"
-                      ? "bg-[#ff9933]/20 text-[#ff9933] shadow-[0_0_8px_rgba(255,153,51,0.3)]"
-                      : event.grade === "Grade 1"
-                        ? "bg-[#ffcc00]/20 text-[#ffcc00] shadow-[0_0_8px_rgba(255,204,0,0.3)]"
-                        : "bg-[#64748b]/20 text-[#94a3b8]"
-                }`}
-              >
-                {event.grade}
+              <div className="text-[10px] text-[#cbd5e1] leading-relaxed mb-2 line-clamp-2">{event.description}</div>
+              <div className="flex items-center justify-between">
+                <div
+                  className={`inline-block text-[9px] px-2.5 py-1 rounded-lg font-semibold ${
+                    event.grade === "Grade 3"
+                      ? "bg-[#ff3355]/20 text-[#ff3355] shadow-[0_0_8px_rgba(255,51,85,0.3)]"
+                      : event.grade === "Grade 2"
+                        ? "bg-[#ff9933]/20 text-[#ff9933] shadow-[0_0_8px_rgba(255,153,51,0.3)]"
+                        : event.grade === "Grade 1"
+                          ? "bg-[#ffcc00]/20 text-[#ffcc00] shadow-[0_0_8px_rgba(255,204,0,0.3)]"
+                          : "bg-[#64748b]/20 text-[#94a3b8]"
+                  }`}
+                >
+                  {event.grade}
+                </div>
+                <div className="text-[9px] text-[#94a3b8]">{new Date(event.reportDate).toLocaleDateString()}</div>
               </div>
             </div>
           ))}

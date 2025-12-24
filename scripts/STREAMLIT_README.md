@@ -24,20 +24,20 @@ Complete production-ready Streamlit application matching the React dashboard exa
 ## Installation
 
 1. **Install Dependencies**:
-```bash
+\`\`\`bash
 pip install streamlit pandas pydeck plotly
-```
+\`\`\`
 
 2. **Run the Application**:
-```bash
+\`\`\`bash
 streamlit run scripts/who_dashboard_app.py
-```
+\`\`\`
 
 ## Data Structure
 
 The application expects a DataFrame with the following columns:
 
-```python
+\`\`\`python
 {
     'country': str,          # Country name
     'disease': str,          # Disease/condition name
@@ -53,7 +53,7 @@ The application expects a DataFrame with the following columns:
     'deaths': int,           # Total deaths
     'report_date': datetime  # Date of report
 }
-```
+\`\`\`
 
 ## Customization
 
@@ -61,7 +61,7 @@ The application expects a DataFrame with the following columns:
 
 Replace the `load_data()` function with your actual data source:
 
-```python
+\`\`\`python
 @st.cache_data(ttl=1800)
 def load_data():
     # Option 1: Load from CSV
@@ -76,24 +76,24 @@ def load_data():
     
     df['report_date'] = pd.to_datetime(df['report_date'])
     return df
-```
+\`\`\`
 
 ### Add Mapbox Token
 
 If you need a custom Mapbox token, add it to `.streamlit/config.toml`:
 
-```toml
+\`\`\`toml
 [mapbox]
 token = "your_mapbox_token_here"
-```
+\`\`\`
 
 ### Adjust Refresh Rate
 
 Change the cache TTL to adjust data refresh rate:
 
-```python
+\`\`\`python
 @st.cache_data(ttl=900)  # Refresh every 15 minutes
-```
+\`\`\`
 
 ## Theme System
 
@@ -113,20 +113,20 @@ The app uses session state to manage themes:
 
 ### Local Server
 
-```bash
+\`\`\`bash
 streamlit run scripts/who_dashboard_app.py --server.port 8501 --server.address 0.0.0.0
-```
+\`\`\`
 
 ### Docker
 
-```dockerfile
+\`\`\`dockerfile
 FROM python:3.10-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 COPY scripts/who_dashboard_app.py .
 CMD ["streamlit", "run", "who_dashboard_app.py"]
-```
+\`\`\`
 
 ## Performance Tips
 
@@ -173,6 +173,6 @@ For issues or questions:
 ## License
 
 Same as the main project license.
-```
+\`\`\`
 
-```txt file="" isHidden
+\`\`\`txt file="" isHidden

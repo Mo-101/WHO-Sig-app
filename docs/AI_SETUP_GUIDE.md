@@ -24,9 +24,9 @@ Your dashboard now has comprehensive AI monitoring, analysis, and reporting capa
 
 Add this to your **Vars** section in the v0 sidebar:
 
-```
+\`\`\`
 AZURE_OPENAI_API_KEY=<your-api-key-here>
-```
+\`\`\`
 
 **Important**: This key must be from your Azure OpenAI resource, not a regular OpenAI key.
 
@@ -72,7 +72,7 @@ AZURE_OPENAI_API_KEY=<your-api-key-here>
 
 Once you've added your `AZURE_OPENAI_API_KEY`, uncomment this section in **app/page.tsx** (around line 71):
 
-```typescript
+\`\`\`typescript
 useEffect(() => {
   const checkForAnomaliesAndDataSources = async () => {
     try {
@@ -102,7 +102,7 @@ useEffect(() => {
   const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
   return () => clearInterval(interval)
 }, [filteredEvents])
-```
+\`\`\`
 
 ## WHO Data Sources Being Monitored
 

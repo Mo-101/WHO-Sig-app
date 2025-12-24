@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { X, MapPin, Calendar, Activity, AlertTriangle, Users, FileText } from "lucide-react"
-import type { WHOEvent } from "@/lib/who-data-fetch"
+import type { WHOEvent } from "@/lib/who-data"
 
 interface EventDetailModalProps {
   event: WHOEvent
@@ -29,55 +29,49 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
 
   const casesFatalityRate = event.deaths && event.cases ? ((event.deaths / event.cases) * 100).toFixed(1) : "N/A"
 
-  const eventTimeline = useMemo(() => {
-    const reportDate = new Date(event.reportDate)
-    return [
-      {
-        date: event.reportDate,
-        title: "Event Reported",
-        description: `Initial report of ${event.disease} outbreak in ${event.country}`,
-        type: "report",
-      },
-      {
-        date: new Date(reportDate.getTime() - 86400000).toISOString().split("T")[0],
-        title: "Alert Issued",
-        description: `WHO AFRO issued ${event.grade} alert for ${event.country}`,
-        type: "alert",
-      },
-      {
-        date: new Date(reportDate.getTime() - 172800000).toISOString().split("T")[0],
-        title: "First Cases Detected",
-        description: `Initial cases detected in ${event.country}`,
-        type: "detection",
-      },
-    ]
-  }, [event])
+  const mockTimeline = [
+    {
+      date: event.reportDate,
+      title: "Event Reported",
+      description: `Initial report of ${event.disease} outbreak in ${event.country}`,
+      type: "report",
+    },
+    {
+      date: new Date(new Date(event.reportDate).getTime() - 86400000).toISOString().split("T")[0],
+      title: "Alert Issued",
+      description: `WHO AFRO issued ${event.grade} alert for ${event.country}`,
+      type: "alert",
+    },
+    {
+      date: new Date(new Date(event.reportDate).getTime() - 172800000).toISOString().split("T")[0],
+      title: "First Cases Detected",
+      description: `Initial cases detected in ${event.country}`,
+      type: "detection",
+    },
+  ]
 
-  const responseActions = useMemo(() => {
-    const reportDate = new Date(event.reportDate)
-    return [
-      {
-        action: "Field Epidemiologists Deployed",
-        status: event.status === "Ongoing" ? "Completed" : "Planned",
-        date: event.reportDate,
-      },
-      {
-        action: "Laboratory Testing Enhanced",
-        status: event.status === "Ongoing" ? "In Progress" : "Planned",
-        date: event.reportDate,
-      },
-      {
-        action: "Community Surveillance Activated",
-        status: "Completed",
-        date: new Date(reportDate.getTime() - 86400000).toISOString().split("T")[0],
-      },
-      {
-        action: "Risk Communication Campaign",
-        status: event.status === "New" ? "Planned" : "In Progress",
-        date: new Date(reportDate.getTime() + 86400000).toISOString().split("T")[0],
-      },
-    ]
-  }, [event])
+  const mockResponseActions = [
+    {
+      action: "Field Epidemiologists Deployed",
+      status: "Completed",
+      date: event.reportDate,
+    },
+    {
+      action: "Laboratory Testing Enhanced",
+      status: "In Progress",
+      date: event.reportDate,
+    },
+    {
+      action: "Community Surveillance Activated",
+      status: "Completed",
+      date: new Date(new Date(event.reportDate).getTime() - 86400000).toISOString().split("T")[0],
+    },
+    {
+      action: "Risk Communication Campaign",
+      status: "Planned",
+      date: new Date(new Date(event.reportDate).getTime() + 86400000).toISOString().split("T")[0],
+    },
+  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -208,7 +202,7 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
               </h3>
               <div className="relative pl-6">
                 <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-[#d1d9e6]" />
-                {eventTimeline.map((item, idx) => (
+                {mockTimeline.map((item, idx) => (
                   <div key={idx} className="relative mb-6 last:mb-0">
                     <div className="absolute -left-[25px] w-3 h-3 rounded-full bg-[#009edb] border-2 border-[#e8eef5]" />
                     <div className="bg-white/40 rounded-xl p-4 neu-shadow-sm">
@@ -264,7 +258,7 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
                 Response Actions
               </h3>
               <div className="space-y-3">
-                {responseActions.map((action, idx) => (
+                {mockResponseActions.map((action, idx) => (
                   <div key={idx} className="bg-white/40 rounded-xl p-4 neu-shadow-sm">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="text-sm font-bold text-[#2c3e50]">{action.action}</h4>
@@ -290,21 +284,15 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-[#6a7a94]">Field Epidemiologists</span>
-                    <span className="text-[#2c3e50] font-semibold">
-                      {event.grade === "Grade 3" ? "5 deployed / 2 needed" : "3 deployed / adequate"}
-                    </span>
+                    <span className="text-[#2c3e50] font-semibold">5 deployed / 2 needed</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[#6a7a94]">Laboratory Capacity</span>
-                    <span className="text-[#2c3e50] font-semibold">
-                      {event.cases && event.cases > 1000 ? "85% utilized" : "60% utilized"}
-                    </span>
+                    <span className="text-[#2c3e50] font-semibold">80% utilized</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[#6a7a94]">Medical Supplies</span>
-                    <span className="text-[#2c3e50] font-semibold">
-                      {event.grade === "Grade 3" ? "Critical - resupply needed" : "Adequate"}
-                    </span>
+                    <span className="text-[#2c3e50] font-semibold">Adequate</span>
                   </div>
                 </div>
               </div>
