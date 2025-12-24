@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx"
+import { z } from "zod"
 
 export interface WHOEvent {
   id: string
@@ -16,44 +16,75 @@ export interface WHOEvent {
   deaths?: number
 }
 
-const WHO_XLSX_URL = process.env.NEXT_PUBLIC_WHO_DATA_URL || "https://emergencydata.afro.who.int/data/latest.xlsx"
+// Zod schema for data validation
+const WHOEventSchema = z.object({
+  id: z.string(),
+  country: z.string().min(2),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  disease: z.string().min(2),
+  grade: z.enum(["Grade 3", "Grade 2", "Grade 1", "Ungraded"]),
+  eventType: z.string(),
+  status: z.string(),
+  description: z.string(),
+  year: z.number().min(2000).max(2100),
+  reportDate: z.string(),
+  cases: z.number().optional(),
+  deaths: z.number().optional(),
+})
 
 export async function fetchWHOData(): Promise<WHOEvent[]> {
   try {
-    const response = await fetch(WHO_XLSX_URL)
+    console.log("[v0] Fetching WHO data from API route...")
+
+    // Use API route to avoid CORS issues
+    const response = await fetch("/api/who-data", {
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch WHO data: ${response.statusText}`)
+      const errorData = await response.json().catch(() => ({ error: response.statusText }))
+      throw new Error(`Failed to fetch WHO data: ${errorData.error || response.statusText}`)
     }
 
-    const arrayBuffer = await response.arrayBuffer()
-    const workbook = XLSX.read(arrayBuffer, { type: "array" })
+    const result = await response.json()
 
-    // Assuming first sheet contains the data
-    const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-    const jsonData = XLSX.utils.sheet_to_json(firstSheet)
+    if (!result.success) {
+      throw new Error(result.error || "Failed to fetch WHO data")
+    }
 
-    // Map the xlsx data to our WHOEvent format
-    const events: WHOEvent[] = jsonData.map((row: any, index: number) => ({
-      id: row.id || `event-${index + 1}`,
-      country: row.country || row.Country || "",
-      lat: Number.parseFloat(row.latitude || row.lat || 0),
-      lon: Number.parseFloat(row.longitude || row.lon || 0),
-      disease: row.disease || row.Disease || "",
-      grade: row.grade || row.Grade || "Ungraded",
-      eventType: row.eventType || row["Event Type"] || "Outbreak",
-      status: row.status || row.Status || "Ongoing",
-      description: row.description || row.Description || "",
-      year: Number.parseInt(row.year || row.Year || new Date().getFullYear()),
-      reportDate: row.reportDate || row["Report Date"] || new Date().toISOString().split("T")[0],
-      cases: Number.parseInt(row.cases || row.Cases || 0),
-      deaths: Number.parseInt(row.deaths || row.Deaths || 0),
-    }))
+    const events = result.data as WHOEvent[]
+    console.log(`[v0] Received ${events.length} events from API`)
+    console.log(`[v0] Metadata:`, result.metadata)
 
-    return events.filter((event) => event.country && event.disease) // Filter out invalid entries
+    // Validate data
+    const validatedEvents = events.map((event, index) => {
+      try {
+        return WHOEventSchema.parse(event)
+      } catch (validationError) {
+        console.warn(`[v0] Validation warning for event ${index}:`, validationError)
+        // Return the event anyway but log the warning
+        return event
+      }
+    })
+
+    return validatedEvents
   } catch (error) {
-    console.error("[v0] Error fetching WHO data from xlsx:", error)
-    throw error
+    console.error("[v0] Error fetching WHO data:", error)
+
+    // Attempt to load fallback static data
+    console.warn("[v0] Attempting to load fallback static data...")
+    try {
+      const { whoEvents } = await import("./who-data")
+      console.log(`[v0] Loaded ${whoEvents.length} events from fallback static data`)
+      return whoEvents
+    } catch (fallbackError) {
+      console.error("[v0] Failed to load fallback data:", fallbackError)
+      throw error // Re-throw original error
+    }
   }
 }
 
