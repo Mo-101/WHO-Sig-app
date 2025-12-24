@@ -4,11 +4,13 @@ import { generateObject, generateText } from "ai"
 import { createAzure } from "@ai-sdk/azure"
 import { z } from "zod"
 import { WHO_DATA_SOURCES } from "./data-sources"
-import { getEnhancedSystemPrompt, getDataSourcesContext, getAnalysisFramework } from "./ai-knowledge-base"
+import { getEnhancedSystemPrompt, getDataSourcesContext } from "./ai-knowledge-base"
+import { WHO_SYSTEM_PROMPT, WHO_TRAINING_EXAMPLES, WHO_ANALYSIS_FRAMEWORK } from "./ai-training-prompts"
 
 const azure = createAzure({
-  resourceName: "afro-agents-resource",
+  resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
+  baseURL: "https://afro-ai-resource.openai.azure.com/openai/deployments/gpt-4o",
 })
 
 const gpt4o = azure("gpt-4o")
@@ -48,15 +50,18 @@ export async function analyzeOutbreakData(events: any[]) {
   const { object } = await generateObject({
     model: gpt4o,
     schema: outbreakAnalysisSchema,
-    prompt: `${getEnhancedSystemPrompt()}
+    prompt: `${WHO_SYSTEM_PROMPT}
 
 MONITORED DATA SOURCES:
 ${getDataSourcesContext()}
 
+TRAINING CONTEXT:
+${WHO_TRAINING_EXAMPLES.map((ex) => `${ex.role}: ${ex.content}`).join("\n\n")}
+
 OUTBREAK DATA TO ANALYZE:
 ${JSON.stringify(events, null, 2)}
 
-${getAnalysisFramework()}
+${WHO_ANALYSIS_FRAMEWORK}
 
 Provide comprehensive risk assessment using WHO terminology and grading standards.
 Consider regional patterns, disease-specific factors, and response capacity in African context.`,
@@ -70,7 +75,7 @@ export async function detectAnomalies(events: any[], historicalData?: any[]) {
   const { object } = await generateObject({
     model: gpt4oMini,
     schema: anomalyDetectionSchema,
-    prompt: `${getEnhancedSystemPrompt()}
+    prompt: `${WHO_SYSTEM_PROMPT}
 
 Analyze recent WHO disease events for anomalies using African outbreak patterns and epidemiological indicators.
 
@@ -155,11 +160,18 @@ Use WHO AFRO terminology, cite data sources, and maintain professional technical
 }
 
 export async function queryOutbreakData(question: string, events: any[]) {
-  const { text } = await generateText({
-    model: gpt4o,
-    prompt: `${getEnhancedSystemPrompt()}
-
-MONITORED DATA SOURCES:
+  const messages = [
+    {
+      role: "system" as const,
+      content: WHO_SYSTEM_PROMPT,
+    },
+    ...WHO_TRAINING_EXAMPLES.map((ex) => ({
+      role: ex.role as "user" | "assistant",
+      content: ex.content,
+    })),
+    {
+      role: "user" as const,
+      content: `MONITORED DATA SOURCES:
 ${getDataSourcesContext()}
 
 USER QUESTION: ${question}
@@ -167,15 +179,13 @@ USER QUESTION: ${question}
 AVAILABLE OUTBREAK DATA:
 ${JSON.stringify(events, null, 2)}
 
-Provide a precise, context-aware answer:
-- Use exact numbers and dates from the data
-- Reference specific countries, regions, diseases
-- Explain grading implications if relevant
-- Identify trends or patterns when applicable
-- Suggest follow-up queries if helpful
-- Cite data sources when referencing external information
+Provide a precise, context-aware answer using the patterns shown in training examples.`,
+    },
+  ]
 
-Respond with WHO terminology and maintain professional, technical accuracy.`,
+  const { text } = await generateText({
+    model: gpt4o,
+    messages: messages,
     maxOutputTokens: 1000,
   })
 
