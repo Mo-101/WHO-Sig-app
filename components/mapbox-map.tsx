@@ -51,9 +51,10 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             token === "undefined" ||
             token === "null" ||
             token.length < 20 ||
-            !token.startsWith("pk.")
+            !token.startsWith("pk.") ||
+            !/^pk\.[a-zA-Z0-9_-]{20,}/.test(token)
           ) {
-            console.error("[v0] Invalid Mapbox token")
+            console.error("[v0] Invalid Mapbox token format")
             setError(
               "Mapbox token not configured properly. Please add a valid MAPBOX_ACCESS_TOKEN to your environment variables.",
             )
@@ -74,15 +75,18 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             })
 
             map.current.on("load", () => {
+              console.log("[v0] Map loaded successfully")
               setMapLoaded(true)
             })
 
             map.current.on("error", (e: any) => {
               console.error("[v0] Mapbox error:", e)
+              mapboxgl.accessToken = ""
+
               if (e.error && e.error.message && e.error.message.includes("token")) {
                 setError("Invalid Mapbox token. Please verify your MAPBOX_ACCESS_TOKEN is correct.")
               } else {
-                setError("Failed to load map. Please check your network connection and Mapbox token.")
+                setError("Failed to load map. Please check your network connection.")
               }
             })
           }
@@ -108,7 +112,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const updateMarkers = async () => {
         const mapboxgl = (await import("mapbox-gl")).default
 
-        // Remove existing markers
         markers.current.forEach((marker) => marker.remove())
         markers.current = []
 
@@ -122,7 +125,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           el.style.border = "2px solid white"
           el.style.boxShadow = "0 2px 6px rgba(0,0,0,0.2)"
 
-          // Color by grade matching WHO grade system
           const gradeColors: Record<string, string> = {
             "Grade 3": "#ff3355",
             "Grade 2": "#ff9933",
@@ -180,7 +182,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
     useEffect(() => {
       if (!map.current || !mapLoaded || !selectedEvent) {
-        // Remove previous popup if no event selected
         if (selectedPopupRef.current) {
           selectedPopupRef.current.remove()
           selectedPopupRef.current = null
@@ -191,7 +192,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       const showPersistentPopup = async () => {
         const mapboxgl = (await import("mapbox-gl")).default
 
-        // Remove previous popup if exists
         if (selectedPopupRef.current) {
           selectedPopupRef.current.remove()
         }
@@ -203,7 +203,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           Ungraded: "#a0a0b0",
         }
 
-        // Create persistent popup with detailed event information
         selectedPopupRef.current = new mapboxgl.Popup({
           closeButton: true,
           closeOnClick: false,
@@ -247,7 +246,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         `)
           .addTo(map.current)
 
-        // Close popup when user clicks the X button
         selectedPopupRef.current.on("close", () => {
           selectedPopupRef.current = null
         })
@@ -307,7 +305,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
       <div className="relative w-full h-full overflow-hidden">
         <div ref={mapContainer} className="absolute inset-0 w-full h-full rounded-xl" />
 
-        {/* Event Details Popup */}
         {selectedEvent && (
           <div className="absolute top-4 right-4 w-80 z-10">
             <Card className="p-4 bg-card border-border shadow-lg">
@@ -351,7 +348,6 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
           </div>
         )}
 
-        {/* Legend */}
         <div className="absolute bottom-4 left-4 z-10">
           <Card className="p-3 bg-card border-border">
             <h4 className="text-xs font-semibold text-foreground mb-2">Event Grade</h4>

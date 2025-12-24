@@ -1,26 +1,63 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect } from "react"
+import useSWR from "swr"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import MapboxMap from "@/components/mapbox-map"
-import { whoEvents } from "@/lib/who-data"
+import type { WHOEvent } from "@/lib/who-data"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ExportSection } from "@/components/export-section"
-import AIChatbot from "@/components/ai-chatbot" // Import AIChatbot
+import AIChatbot from "@/components/ai-chatbot"
 import { DataSourceMonitor } from "@/components/data-source-monitor"
 import { AdvancedSearch } from "@/components/advanced-search"
 import { FilterPresets } from "@/components/filter-presets"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { NotificationCenter } from "@/components/notification-center"
 import { EventDetailModal } from "@/components/event-detail-modal"
-import { BarChart3 } from "lucide-react"
+import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import type { MapboxMapRef } from "@/components/mapbox-map"
 import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
 
+const fetcher = (url: string) =>
+  fetch(url)
+    .then((res) => res.json())
+    .then((json) => {
+      console.log("[v0] Dark page API response:", json)
+      // Handle structured API response
+      if (json.success && json.data) {
+        return Array.isArray(json.data) ? json.data : []
+      }
+      // Handle direct array response (legacy)
+      if (Array.isArray(json)) {
+        return json
+      }
+      // Fallback to empty array
+      console.warn("[v0] Unexpected API response format, returning empty array")
+      return []
+    })
+    .catch((error) => {
+      console.error("[v0] Fetch error:", error)
+      return [] // Return empty array on error
+    })
+
 export default function DarkThemePage() {
+  const {
+    data: whoEvents,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<WHOEvent[]>("/api/who-data", fetcher, {
+    refreshInterval: 300000, // Auto-refresh every 5 minutes
+    revalidateOnFocus: false,
+    fallbackData: [], // Use empty array while loading
+    shouldRetryOnError: true,
+    errorRetryCount: 3,
+    errorRetryInterval: 5000,
+  })
+
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
@@ -30,19 +67,29 @@ export default function DarkThemePage() {
   const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
   const mapRef = useRef<MapboxMapRef>(null)
   const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
-  const [showCharts, setShowCharts] = useState(true)
   const [startDate, setStartDate] = useState("2025-12-01")
   const [endDate, setEndDate] = useState("2025-12-31")
   const [searchFilteredEvents, setSearchFilteredEvents] = useState<any[]>([])
   const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
-  const uniqueCountries = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.country))).sort(), [])
-  const uniqueDiseases = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.disease))).sort(), [])
-  const uniqueEventTypes = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.eventType))).sort(), [])
-  const uniqueYears = useMemo(() => Array.from(new Set(whoEvents.map((e) => e.year))).sort((a, b) => b - a), [])
+  const uniqueCountries = useMemo(
+    () => Array.from(new Set((whoEvents || []).map((e) => e.country))).sort(),
+    [whoEvents],
+  )
+  const uniqueDiseases = useMemo(() => Array.from(new Set((whoEvents || []).map((e) => e.disease))).sort(), [whoEvents])
+  const uniqueEventTypes = useMemo(
+    () => Array.from(new Set((whoEvents || []).map((e) => e.eventType))).sort(),
+    [whoEvents],
+  )
+  const uniqueYears = useMemo(
+    () => Array.from(new Set((whoEvents || []).map((e) => e.year))).sort((a, b) => b - a),
+    [whoEvents],
+  )
 
   const filteredEvents = useMemo(() => {
+    if (!whoEvents) return []
+
     let events = whoEvents.filter((event) => {
       const gradeMatch = selectedGrades.length === 0 || selectedGrades.includes(event.grade)
       const countryMatch = selectedCountries.length === 0 || selectedCountries.includes(event.country)
@@ -65,6 +112,7 @@ export default function DarkThemePage() {
 
     return events
   }, [
+    whoEvents,
     selectedGrades,
     selectedCountries,
     selectedDiseases,
@@ -76,19 +124,21 @@ export default function DarkThemePage() {
   ])
 
   const gradeSummary = useMemo(() => {
+    if (!whoEvents) return { g3: 0, g2: 0, g1: 0, gu: 0 }
     const g3 = whoEvents.filter((e) => e.grade === "Grade 3").length
     const g2 = whoEvents.filter((e) => e.grade === "Grade 2").length
     const g1 = whoEvents.filter((e) => e.grade === "Grade 1").length
     const gu = whoEvents.filter((e) => e.grade === "Ungraded").length
     return { g3, g2, g1, gu }
-  }, [])
+  }, [whoEvents])
 
   const newCount = filteredEvents.filter((e) => e.status === "New").length
   const ongoingCount = filteredEvents.filter((e) => e.status === "Ongoing").length
   const outbreakCount = filteredEvents.filter((e) => e.eventType === "Outbreak").length
-  const protracted1Count = whoEvents.filter((e) => e.eventType.includes("Protracted-1")).length
-  const protracted2Count = whoEvents.filter((e) => e.eventType.includes("Protracted-2")).length
-  const protracted3Count = whoEvents.filter((e) => e.eventType.includes("Protracted-3")).length
+
+  const protracted1Count = (whoEvents || []).filter((e) => e.eventType.includes("Protracted-1")).length
+  const protracted2Count = (whoEvents || []).filter((e) => e.eventType.includes("Protracted-2")).length
+  const protracted3Count = (whoEvents || []).filter((e) => e.eventType.includes("Protracted-3")).length
 
   const toggleFilter = (value: string, selectedValues: string[], setSelectedValues: (values: string[]) => void) => {
     setSelectedValues(
@@ -139,11 +189,13 @@ export default function DarkThemePage() {
   }
 
   const getRelatedEvents = (event: any) => {
-    return whoEvents.filter(
-      (e) =>
-        e.id !== event.id &&
-        (e.country === event.country || e.disease === event.disease) &&
-        Math.abs(new Date(e.reportDate).getTime() - new Date(event.reportDate).getTime()) < 30 * 24 * 60 * 60 * 1000,
+    return (
+      whoEvents?.filter(
+        (e) =>
+          e.id !== event.id &&
+          (e.country === event.country || e.disease === event.disease) &&
+          Math.abs(new Date(e.reportDate).getTime() - new Date(event.reportDate).getTime()) < 30 * 24 * 60 * 60 * 1000,
+      ) || []
     )
   }
 
@@ -173,6 +225,10 @@ export default function DarkThemePage() {
 
   const handleAlertGenerated = (alert: any) => {
     setAlerts((prev) => [...prev, alert])
+  }
+
+  const handleManualRefresh = () => {
+    mutate()
   }
 
   useEffect(() => {
@@ -207,6 +263,49 @@ export default function DarkThemePage() {
     return () => clearInterval(interval)
   }, [filteredEvents])
 
+  if (isLoading) {
+    return (
+      <div className="h-screen bg-[#0a1929] flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-12 h-12 text-[#009edb] animate-spin mx-auto mb-4" />
+          <p className="text-lg font-semibold text-[#e3f2fd]">Loading WHO Data...</p>
+          <p className="text-sm text-[#90caf9] mt-2">Fetching latest outbreak information</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-screen bg-[#0a1929] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertTriangle className="w-12 h-12 text-[#ff3355] mx-auto mb-4" />
+          <p className="text-lg font-semibold text-[#e3f2fd] mb-2">Failed to Load Data</p>
+          <p className="text-sm text-[#90caf9] mb-4">
+            {error.message || "Unable to fetch WHO data. Please try again."}
+          </p>
+          <button
+            onClick={handleManualRefresh}
+            className="px-6 py-3 bg-[#009edb] text-white font-semibold rounded-xl hover:bg-[#0056b3] transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!whoEvents || whoEvents.length === 0) {
+    return (
+      <div className="h-screen bg-[#0a1929] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-[#e3f2fd]">No Data Available</p>
+          <p className="text-sm text-[#90caf9] mt-2">No outbreak events found in the database</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
       {alerts.map((alert) => (
@@ -232,7 +331,7 @@ export default function DarkThemePage() {
 
       <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-y-auto z-20 border border-white/10 custom-scrollbar-dark">
         <div className="mb-4">
-          <AdvancedSearch events={whoEvents} onSearchResults={setSearchFilteredEvents} isDark={true} />
+          <AdvancedSearch events={whoEvents || []} onSearchResults={setSearchFilteredEvents} isDark={true} />
         </div>
 
         <div className="mb-4">

@@ -4,15 +4,15 @@
 
 ### Step 1: Install Dependencies
 
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 ### Step 2: Configure Environment Variables
 
 Create `.env.local` file:
 
-```bash
+\`\`\`bash
 # Azure OpenAI (for AI features)
 AZURE_OPENAI_API_KEY=your_key_here
 
@@ -21,7 +21,7 @@ NEXT_PUBLIC_WHO_DATA_URL=https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/ex
 
 # Mapbox (for maps)
 NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
-```
+\`\`\`
 
 **Get Your Keys:**
 - **Azure OpenAI**: [Azure Portal](https://portal.azure.com) → afro-ai-resource → Keys and Endpoint
@@ -30,14 +30,14 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
 
 ### Step 3: Test & Run
 
-```bash
+\`\`\`bash
 # Test your setup
 npm run test:data   # Test data source connection
 npm run test:azure  # Test Azure OpenAI
 
 # Run the app
 npm run dev
-```
+\`\`\`
 
 Open [http://localhost:3000](http://localhost:3000)
 
@@ -74,10 +74,10 @@ Your Google Sheet should have these columns:
 ### 1. Check Browser Console (F12)
 
 Look for:
-```
+\`\`\`
 ✅ [v0] Loaded 20 events from WHO xlsx data source
 ✅ [v0] AI monitoring active - analyzing WHO outbreak data...
-```
+\`\`\`
 
 ### 2. Check the Dashboard
 
@@ -91,16 +91,16 @@ Look for:
 ## 🔧 Troubleshooting
 
 ### Data Not Loading?
-```bash
+\`\`\`bash
 npm run test:data  # Test your data source
-```
+\`\`\`
 - Verify Google Sheet is shared publicly
 - Check sheet ID in URL is correct
 
 ### AI Not Working?
-```bash
+\`\`\`bash
 npm run test:azure  # Test Azure OpenAI
-```
+\`\`\`
 - Verify API key is correct
 - Check you have quota/credits
 

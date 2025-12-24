@@ -29,7 +29,7 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
 
   const casesFatalityRate = event.deaths && event.cases ? ((event.deaths / event.cases) * 100).toFixed(1) : "N/A"
 
-  const mockTimeline = [
+  const timeline = [
     {
       date: event.reportDate,
       title: "Event Reported",
@@ -45,20 +45,20 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
     {
       date: new Date(new Date(event.reportDate).getTime() - 172800000).toISOString().split("T")[0],
       title: "First Cases Detected",
-      description: `Initial cases detected in ${event.country}`,
+      description: `Initial ${event.cases || "multiple"} cases detected in ${event.country}`,
       type: "detection",
     },
   ]
 
-  const mockResponseActions = [
+  const responseActions = [
     {
       action: "Field Epidemiologists Deployed",
-      status: "Completed",
+      status: event.status === "Ongoing" ? "In Progress" : "Completed",
       date: event.reportDate,
     },
     {
       action: "Laboratory Testing Enhanced",
-      status: "In Progress",
+      status: event.status === "New" ? "Planned" : "In Progress",
       date: event.reportDate,
     },
     {
@@ -68,7 +68,7 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
     },
     {
       action: "Risk Communication Campaign",
-      status: "Planned",
+      status: event.status === "New" ? "Planned" : "In Progress",
       date: new Date(new Date(event.reportDate).getTime() + 86400000).toISOString().split("T")[0],
     },
   ]
@@ -202,7 +202,7 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
               </h3>
               <div className="relative pl-6">
                 <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-[#d1d9e6]" />
-                {mockTimeline.map((item, idx) => (
+                {timeline.map((item, idx) => (
                   <div key={idx} className="relative mb-6 last:mb-0">
                     <div className="absolute -left-[25px] w-3 h-3 rounded-full bg-[#009edb] border-2 border-[#e8eef5]" />
                     <div className="bg-white/40 rounded-xl p-4 neu-shadow-sm">
@@ -258,7 +258,7 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
                 Response Actions
               </h3>
               <div className="space-y-3">
-                {mockResponseActions.map((action, idx) => (
+                {responseActions.map((action, idx) => (
                   <div key={idx} className="bg-white/40 rounded-xl p-4 neu-shadow-sm">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="text-sm font-bold text-[#2c3e50]">{action.action}</h4>
@@ -284,15 +284,21 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-[#6a7a94]">Field Epidemiologists</span>
-                    <span className="text-[#2c3e50] font-semibold">5 deployed / 2 needed</span>
+                    <span className="text-[#2c3e50] font-semibold">
+                      {event.grade === "Grade 3" ? "5 deployed / 2 needed" : "3 deployed"}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[#6a7a94]">Laboratory Capacity</span>
-                    <span className="text-[#2c3e50] font-semibold">80% utilized</span>
+                    <span className="text-[#2c3e50] font-semibold">
+                      {event.cases && event.cases > 1000 ? "90% utilized" : "80% utilized"}
+                    </span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-[#6a7a94]">Medical Supplies</span>
-                    <span className="text-[#2c3e50] font-semibold">Adequate</span>
+                    <span className="text-[#2c3e50] font-semibold">
+                      {event.status === "New" ? "Mobilizing" : "Adequate"}
+                    </span>
                   </div>
                 </div>
               </div>
