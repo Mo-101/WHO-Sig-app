@@ -53,11 +53,23 @@ export async function GET() {
     let dataUrl = process.env.NEXT_PUBLIC_WHO_DATA_URL || ""
 
     if (dataUrl.includes("docs.google.com/spreadsheets")) {
-      const match = dataUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)
-      if (match) {
-        const spreadsheetId = match[1]
-        dataUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=xlsx`
-        console.log(`[v0] Converted to export URL: ${dataUrl}`)
+      // Handle both regular spreadsheet URLs and published URLs
+      if (dataUrl.includes("/d/e/")) {
+        // Published URL format: /d/e/{SHEET_ID}
+        const match = dataUrl.match(/\/d\/e\/([a-zA-Z0-9-_]+)/)
+        if (match) {
+          const sheetId = match[1]
+          dataUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=xlsx`
+          console.log(`[v0] Converted to published export URL: ${dataUrl}`)
+        }
+      } else if (dataUrl.includes("/d/")) {
+        // Regular spreadsheet URL format: /d/{SHEET_ID}
+        const match = dataUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)
+        if (match) {
+          const sheetId = match[1]
+          dataUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`
+          console.log(`[v0] Converted to regular export URL: ${dataUrl}`)
+        }
       }
     }
 
