@@ -6,7 +6,7 @@ This WHO Signal Intelligence Dashboard requires several environment variables to
 
 ### 1. Azure OpenAI Configuration
 
-The app uses Azure OpenAI GPT-4o for AI-powered outbreak analysis and signal detection.
+The app uses Azure OpenAI fine-tuned GPT-4o-mini for AI-powered outbreak analysis and signal detection.
 
 **Required:**
 - `AZURE_OPENAI_API_KEY` - Your Azure OpenAI API key
@@ -16,19 +16,35 @@ The app uses Azure OpenAI GPT-4o for AI-powered outbreak analysis and signal det
 AZURE_OPENAI_API_KEY=your_actual_api_key_here
 ```
 
+**Azure OpenAI Deployment Details:**
+- **Resource Name**: `afro-ai-resource`
+- **Deployment Name**: `AFRO-AI`
+- **Model**: `gpt-4o-mini-2024-07-18.ft-e36e576469364444822501faed26ec76` (Fine-tuned)
+- **Base URL**: `https://afro-ai-resource.cognitiveservices.azure.com/`
+- **Endpoint**: `https://afro-ai-resource.cognitiveservices.azure.com/openai/deployments/AFRO-AI/chat/completions?api-version=2024-12-01-preview`
+- **API Version**: `2024-12-01-preview` or `2025-01-01-preview`
+- **Rate Limits**: 500,000 tokens/min, 3,000 requests/min
+- **Created**: Dec 24, 2025
+- **Model Retirement**: Mar 31, 2027
+
 **How to get your API key:**
 1. Go to [Azure Portal](https://portal.azure.com)
 2. Navigate to your Azure OpenAI resource: `afro-ai-resource`
-3. Go to "Keys and Endpoint"
+3. Go to "Keys and Endpoint" section
 4. Copy Key 1 or Key 2
 
-**Endpoint Details:**
-- Resource: `afro-ai-resource`
-- AI Services Endpoint: `https://afro-ai-resource.services.ai.azure.com/`
-- OpenAI Endpoint: `https://afro-ai-resource.openai.azure.com/`
-- Deployment: `gpt-4o`
-- Region: `West Europe`
-- API Version: `2025-01-01-preview`
+**Using the API:**
+The application automatically uses the AI SDK with Azure provider:
+```typescript
+import { createAzure } from "@ai-sdk/azure"
+
+const azure = createAzure({
+  resourceName: "afro-ai-resource",
+  apiKey: process.env.AZURE_OPENAI_API_KEY || "",
+})
+
+const afroAI = azure("AFRO-AI")
+```
 
 ### 2. WHO Data Source
 
@@ -193,9 +209,16 @@ The AI system monitors these WHO AFRO data sources:
 ### 8. Troubleshooting
 
 **Issue: "AI monitoring error"**
-- Check that `AZURE_OPENAI_API_KEY` is set correctly
-- Verify the key has access to the `gpt-4o` deployment
-- Check Azure OpenAI service is not rate limited
+- Check that `AZURE_OPENAI_API_KEY` is set correctly in environment variables
+- Verify the key has access to the `AFRO-AI` deployment (not gpt-4o)
+- Check Azure OpenAI service is not rate limited (500K tokens/min, 3K requests/min)
+- Confirm API version is `2024-12-01-preview` or `2025-01-01-preview`
+- Verify the fine-tuned model `gpt-4o-mini-2024-07-18.ft-e36e576469364444822501faed26ec76` is deployed
+
+**Issue: "Invalid API endpoint"**
+- The application uses `https://afro-ai-resource.cognitiveservices.azure.com/` as base URL
+- Deployment name should be `AFRO-AI` (not gpt-4o or gpt-4o-mini)
+- The AI SDK handles URL construction automatically
 
 **Issue: "Failed to load WHO outbreak data"**
 - Verify `NEXT_PUBLIC_WHO_DATA_URL` is accessible

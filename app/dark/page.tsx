@@ -19,7 +19,7 @@ import { EventDetailModal } from "@/components/event-detail-modal"
 import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import type { MapboxMapRef } from "@/components/mapbox-map"
-import { analyzeDataSourcesForAlerts } from "@/lib/ai-analysis"
+import { analyzeOutbreakData, detectAnomalies } from "@/lib/ai-analysis"
 
 const fetcher = (url: string) =>
   fetch(url)
@@ -232,36 +232,51 @@ export default function DarkThemePage() {
   }
 
   useEffect(() => {
-    const checkForAnomaliesAndDataSources = async () => {
-      try {
-        const alertAnalysis = await analyzeDataSourcesForAlerts(filteredEvents)
+    const runAIAnalysis = async () => {
+      if (whoEvents.length === 0) return
 
-        if (alertAnalysis.alertGenerated) {
-          const alert = {
+      try {
+        console.log("[v0] Running AI analysis on", whoEvents.length, "events")
+
+        // Run AI analysis
+        const analysis = await analyzeOutbreakData(whoEvents)
+        const anomalies = await detectAnomalies(whoEvents)
+
+        console.log("[v0] AI Analysis complete:", { analysis, anomalies })
+
+        // Generate alerts if needed
+        if (anomalies.anomalyDetected || analysis.alertLevel === "critical" || analysis.alertLevel === "high") {
+          const newAlert = {
             id: crypto.randomUUID(),
-            alertLevel: alertAnalysis.alertLevel as "critical" | "high" | "medium" | "low",
-            riskScore: alertAnalysis.alertLevel === "critical" ? 95 : alertAnalysis.alertLevel === "high" ? 85 : 70,
-            summary: alertAnalysis.summary,
-            keyFindings: alertAnalysis.findings,
-            recommendations: alertAnalysis.recommendations,
-            affectedCountries: Array.from(new Set(filteredEvents.map((e) => e.country))),
-            trendAnalysis: alertAnalysis.estimatedImpact,
+            type: analysis.alertLevel === "critical" ? "critical" : "warning",
+            title: `${analysis.alertLevel.toUpperCase()} Alert: ${anomalies.anomalyDetected ? anomalies.anomalyType : "Risk Assessment"}`,
+            summary: analysis.summary,
+            affectedCountries: analysis.affectedCountries,
+            recommendations: analysis.recommendations,
+            riskScore: analysis.riskScore,
             timestamp: new Date(),
           }
 
-          setAlerts((prev) => [...prev, alert])
+          setAlerts((prev) => {
+            // Avoid duplicate alerts
+            const exists = prev.some((a) => a.title === newAlert.title && Date.now() - a.timestamp.getTime() < 600000)
+            if (!exists) {
+              console.log("[v0] New alert generated:", newAlert)
+              return [newAlert, ...prev].slice(0, 5) // Keep max 5 alerts
+            }
+            return prev
+          })
         }
       } catch (error) {
-        console.error("[v0] AI monitoring error:", error)
+        console.error("[v0] AI analysis error:", error)
       }
     }
 
-    checkForAnomaliesAndDataSources()
-
-    const interval = setInterval(checkForAnomaliesAndDataSources, 120000)
-
+    // Run analysis on load and every 5 minutes
+    runAIAnalysis()
+    const interval = setInterval(runAIAnalysis, 300000)
     return () => clearInterval(interval)
-  }, [filteredEvents])
+  }, [whoEvents])
 
   if (isLoading) {
     return (

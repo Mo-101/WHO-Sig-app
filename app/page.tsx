@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useMemo, useRef } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import useSWR from "swr"
 import { Checkbox } from "@/components/ui/checkbox"
 import MapboxMap from "@/components/mapbox-map"
-import type { WHOEvent } from "@/lib/who-data"
 import { AIAlertPopup } from "@/components/ai-alert-popup"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { AIChatbot } from "@/components/ai-chatbot"
@@ -18,6 +17,7 @@ import { NotificationCenter } from "@/components/notification-center"
 import { EventDetailModal } from "@/components/event-detail-modal"
 import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
+import { analyzeOutbreakData, detectAnomalies } from "@/lib/ai-analysis"
 
 const fetcher = (url: string) =>
   fetch(url)
@@ -43,18 +43,25 @@ const fetcher = (url: string) =>
 
 export default function DashboardPage() {
   const {
-    data: whoEvents,
+    data: apiResponse,
     error,
     isLoading,
     mutate,
-  } = useSWR<WHOEvent[]>("/api/who-data", fetcher, {
-    refreshInterval: 300000, // Auto-refresh every 5 minutes
-    revalidateOnFocus: false,
-    fallbackData: [], // Use empty array while loading
-    shouldRetryOnError: true,
-    errorRetryCount: 3,
-    errorRetryInterval: 5000,
-  })
+  } = useSWR<any>(
+    "/api/who-data",
+    async (url) => {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error("Failed to fetch")
+      return res.json()
+    },
+    {
+      refreshInterval: 300000,
+      revalidateOnFocus: false,
+      onError: (err) => console.error("[v0] SWR Error:", err),
+    },
+  )
+
+  const whoEvents = Array.isArray(apiResponse?.data) ? apiResponse.data : []
 
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
@@ -224,6 +231,53 @@ export default function DashboardPage() {
   const handleManualRefresh = () => {
     mutate()
   }
+
+  useEffect(() => {
+    const runAIAnalysis = async () => {
+      if (whoEvents.length === 0) return
+
+      try {
+        console.log("[v0] Running AI analysis on", whoEvents.length, "events")
+
+        // Run AI analysis
+        const analysis = await analyzeOutbreakData(whoEvents)
+        const anomalies = await detectAnomalies(whoEvents)
+
+        console.log("[v0] AI Analysis complete:", { analysis, anomalies })
+
+        // Generate alerts if needed
+        if (anomalies.anomalyDetected || analysis.alertLevel === "critical" || analysis.alertLevel === "high") {
+          const newAlert = {
+            id: crypto.randomUUID(),
+            type: analysis.alertLevel === "critical" ? "critical" : "warning",
+            title: `${analysis.alertLevel.toUpperCase()} Alert: ${anomalies.anomalyDetected ? anomalies.anomalyType : "Risk Assessment"}`,
+            summary: analysis.summary,
+            affectedCountries: analysis.affectedCountries,
+            recommendations: analysis.recommendations,
+            riskScore: analysis.riskScore,
+            timestamp: new Date(),
+          }
+
+          setAlerts((prev) => {
+            // Avoid duplicate alerts
+            const exists = prev.some((a) => a.title === newAlert.title && Date.now() - a.timestamp.getTime() < 600000)
+            if (!exists) {
+              console.log("[v0] New alert generated:", newAlert)
+              return [newAlert, ...prev].slice(0, 5) // Keep max 5 alerts
+            }
+            return prev
+          })
+        }
+      } catch (error) {
+        console.error("[v0] AI analysis error:", error)
+      }
+    }
+
+    // Run analysis on load and every 5 minutes
+    runAIAnalysis()
+    const interval = setInterval(runAIAnalysis, 300000)
+    return () => clearInterval(interval)
+  }, [whoEvents])
 
   if (isLoading) {
     return (

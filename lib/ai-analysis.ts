@@ -10,12 +10,14 @@ import { WHO_SYSTEM_PROMPT, WHO_TRAINING_EXAMPLES, WHO_ANALYSIS_FRAMEWORK } from
 const azure = createAzure({
   resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  baseURL: "https://afro-ai-resource.openai.azure.com/openai/deployments/gpt-4o",
 })
 
-const gpt4o = azure("gpt-4o")
+const afroAI = azure("AFRO-AI")
 
-const gpt4oMini = azure("gpt-4o-mini")
+const gpt4o = afroAI
+
+// Keep backward compatibility with gpt-4o-mini for specific use cases
+const gpt4oMini = afroAI
 
 const outbreakAnalysisSchema = z.object({
   alertLevel: z.enum(["critical", "high", "medium", "low"]),
@@ -48,7 +50,7 @@ const dataSourceMonitoringSchema = z.object({
 
 export async function analyzeOutbreakData(events: any[]) {
   const { object } = await generateObject({
-    model: gpt4o,
+    model: afroAI,
     schema: outbreakAnalysisSchema,
     prompt: `${WHO_SYSTEM_PROMPT}
 
@@ -65,7 +67,7 @@ ${WHO_ANALYSIS_FRAMEWORK}
 
 Provide comprehensive risk assessment using WHO terminology and grading standards.
 Consider regional patterns, disease-specific factors, and response capacity in African context.`,
-    maxOutputTokens: 2000,
+    maxTokens: 2000,
   })
 
   return object
@@ -73,7 +75,7 @@ Consider regional patterns, disease-specific factors, and response capacity in A
 
 export async function detectAnomalies(events: any[], historicalData?: any[]) {
   const { object } = await generateObject({
-    model: gpt4oMini,
+    model: afroAI,
     schema: anomalyDetectionSchema,
     prompt: `${WHO_SYSTEM_PROMPT}
 
@@ -93,7 +95,7 @@ DETECTION CRITERIA:
 - Cross-border patterns: Simultaneous events in neighboring countries
 
 Consider African context: rainy season impacts, population movements, healthcare access, and endemic disease baselines.`,
-    maxOutputTokens: 1500,
+    maxTokens: 1500,
   })
 
   return object
@@ -101,7 +103,7 @@ Consider African context: rainy season impacts, population movements, healthcare
 
 export async function generateOutbreakReport(events: any[], timeframe: string) {
   const { text } = await generateText({
-    model: gpt4o,
+    model: afroAI,
     prompt: `${getEnhancedSystemPrompt()}
 
 Generate a comprehensive WHO AFRO outbreak intelligence report for ${timeframe}.
@@ -153,7 +155,7 @@ REPORT STRUCTURE:
    - Technical assistance priorities
 
 Use WHO AFRO terminology, cite data sources, and maintain professional technical tone.`,
-    maxOutputTokens: 3000,
+    maxTokens: 3000,
   })
 
   return text
@@ -184,9 +186,9 @@ Provide a precise, context-aware answer using the patterns shown in training exa
   ]
 
   const { text } = await generateText({
-    model: gpt4o,
+    model: afroAI,
     messages: messages,
-    maxOutputTokens: 1000,
+    maxTokens: 1000,
   })
 
   return text
@@ -196,7 +198,7 @@ export async function analyzeDataSourcesForAlerts(events: any[], dataSourceStatu
   const sourcesList = WHO_DATA_SOURCES.map((s) => `${s.name} (${s.url})`).join("\n")
 
   const { object } = await generateObject({
-    model: gpt4o,
+    model: afroAI,
     schema: dataSourceMonitoringSchema,
     prompt: `You are monitoring WHO disease outbreak data sources for the African region.
 
@@ -218,7 +220,7 @@ Analyze the current situation and determine if an alert should be generated base
 
 Generate an alert if there are concerning patterns that require WHO attention.
 Provide actionable insights and recommendations.`,
-    maxOutputTokens: 2000,
+    maxTokens: 2000,
   })
 
   return object
@@ -226,7 +228,7 @@ Provide actionable insights and recommendations.`,
 
 export async function analyzeOutbreakDataWithSources(events: any[], dataSources: typeof WHO_DATA_SOURCES) {
   const { object } = await generateObject({
-    model: gpt4o,
+    model: afroAI,
     schema: outbreakAnalysisSchema,
     prompt: `Analyze WHO disease outbreak data from multiple monitoring sources:
 
@@ -251,7 +253,7 @@ Consider:
 - Healthcare system capacity
 - Population vulnerability
 - Resource allocation needs`,
-    maxOutputTokens: 2000,
+    maxTokens: 2000,
   })
 
   return object
