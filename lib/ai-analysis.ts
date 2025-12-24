@@ -8,9 +8,9 @@ import { getEnhancedSystemPrompt, getDataSourcesContext } from "./ai-knowledge-b
 import { WHO_SYSTEM_PROMPT, WHO_TRAINING_EXAMPLES, WHO_ANALYSIS_FRAMEWORK } from "./ai-training-prompts"
 
 const azure = createAzure({
-  resourceName: "afro-agents-resource",
+  resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  baseURL: "https://afro-agents-resource.openai.azure.com/openai/deployments/gpt-4o",
+  baseURL: "https://afro-ai-resource.openai.azure.com/openai/deployments/gpt-4o",
 })
 
 const gpt4o = azure("gpt-4o")

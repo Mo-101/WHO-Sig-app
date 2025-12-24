@@ -18,13 +18,14 @@ AZURE_OPENAI_API_KEY=your_actual_api_key_here
 
 **How to get your API key:**
 1. Go to [Azure Portal](https://portal.azure.com)
-2. Navigate to your Azure OpenAI resource: `afro-agents-resource`
+2. Navigate to your Azure OpenAI resource: `afro-ai-resource`
 3. Go to "Keys and Endpoint"
 4. Copy Key 1 or Key 2
 
 **Endpoint Details:**
-- Resource: `afro-agents-resource`
-- Endpoint: `https://afro-agents-resource.openai.azure.com/`
+- Resource: `afro-ai-resource`
+- AI Services Endpoint: `https://afro-ai-resource.services.ai.azure.com/`
+- OpenAI Endpoint: `https://afro-ai-resource.openai.azure.com/`
 - Deployment: `gpt-4o`
 - Region: `West Europe`
 - API Version: `2025-01-01-preview`

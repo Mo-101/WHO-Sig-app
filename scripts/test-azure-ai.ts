@@ -29,17 +29,17 @@ async function testAzureOpenAI() {
   try {
     // Initialize Azure OpenAI
     const azure = createAzure({
-      resourceName: "afro-agents-resource",
+      resourceName: "afro-ai-resource",
       apiKey: apiKey,
-      baseURL: "https://afro-agents-resource.openai.azure.com/openai/deployments/gpt-4o",
+      baseURL: "https://afro-ai-resource.openai.azure.com/openai/deployments/gpt-4o",
     })
 
     const gpt4o = azure("gpt-4o")
 
     console.log("\n🚀 Sending test request to Azure OpenAI...")
-    console.log("Resource: afro-agents-resource")
+    console.log("Resource: afro-ai-resource")
     console.log("Deployment: gpt-4o")
-    console.log("Endpoint: https://afro-agents-resource.openai.azure.com/\n")
+    console.log("Endpoint: https://afro-ai-resource.openai.azure.com/\n")
 
     // Test with a simple WHO-related query
     const { text, usage } = await generateText({
@@ -71,7 +71,7 @@ async function testAzureOpenAI() {
       console.error("  - Check that you're using the correct key (Key 1 or Key 2)")
     } else if (error.message?.includes("404")) {
       console.error("Resource Not Found:")
-      console.error("  - Check that the resource name is correct: afro-agents-resource")
+      console.error("  - Check that the resource name is correct: afro-ai-resource")
       console.error("  - Verify the deployment name is: gpt-4o")
       console.error("  - Ensure the deployment is active in Azure Portal")
     } else if (error.message?.includes("429")) {
@@ -92,7 +92,7 @@ async function testAzureOpenAI() {
     console.error("\n📖 Troubleshooting Guide:")
     console.error("1. Verify AZURE_OPENAI_API_KEY in .env.local")
     console.error("2. Check Azure Portal: https://portal.azure.com")
-    console.error("3. Navigate to: afro-agents-resource > Keys and Endpoint")
+    console.error("3. Navigate to: afro-ai-resource > Keys and Endpoint")
     console.error("4. Ensure GPT-4o deployment is active")
     console.error("5. Check API quota and billing status\n")
 

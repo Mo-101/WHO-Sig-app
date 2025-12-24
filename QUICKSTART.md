@@ -24,7 +24,7 @@ NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
 ```
 
 **Get Your Keys:**
-- **Azure OpenAI**: [Azure Portal](https://portal.azure.com) → afro-agents-resource → Keys and Endpoint
+- **Azure OpenAI**: [Azure Portal](https://portal.azure.com) → afro-ai-resource → Keys and Endpoint
 - **Google Sheets**: Share your sheet → "Anyone with link can view" → Get sheet ID from URL
 - **Mapbox**: [Mapbox Account](https://account.mapbox.com/access-tokens/)
 
