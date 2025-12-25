@@ -169,7 +169,13 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
                   <div className="flex justify-between py-2 border-b border-[#d1d9e6]">
                     <span className="text-xs text-[#6a7a94] uppercase">Location</span>
                     <span className="text-sm font-semibold text-[#2c3e50]">
-                      {event.lat.toFixed(4)}, {event.lon.toFixed(4)}
+                      {typeof event.lat === "number"
+                        ? event.lat.toFixed(4)
+                        : Number.parseFloat(String(event.lat || 0)).toFixed(4)}
+                      ,{" "}
+                      {typeof event.lon === "number"
+                        ? event.lon.toFixed(4)
+                        : Number.parseFloat(String(event.lon || 0)).toFixed(4)}
                     </span>
                   </div>
                   <div className="py-2">
