@@ -10,7 +10,7 @@ import { WHO_SYSTEM_PROMPT, WHO_TRAINING_EXAMPLES, WHO_ANALYSIS_FRAMEWORK } from
 const azure = createAzure({
   resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  apiVersion: "2024-08-01-preview", // Compatible with AI SDK 5
+  apiVersion: "2024-02-01", // Stable version with v2 specification
 })
 
 const afroAI = azure("AFRO-AI")

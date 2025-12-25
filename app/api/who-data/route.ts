@@ -79,12 +79,12 @@ export async function GET() {
     })
 
     if (!response.ok) {
-      console.error(`[v0] Fetch failed with status: ${response.status}`)
+      console.warn(`[v0] Remote fetch returned ${response.status}, using database cache`)
 
       try {
         const dbEvents = await getWHOEventsFromDB()
         if (dbEvents.length > 0) {
-          console.log(`[v0] Using cached database data: ${dbEvents.length} events`)
+          console.log(`[v0] Retrieved ${dbEvents.length} events from Azure PostgreSQL`)
           return NextResponse.json({
             success: true,
             data: dbEvents,
@@ -92,23 +92,24 @@ export async function GET() {
               totalEvents: dbEvents.length,
               fetchedAt: lastSync?.last_sync_time || new Date().toISOString(),
               source: "database-cache-fallback",
-              warning: `Failed to fetch from remote source`,
+              cached: true,
             },
           })
         }
       } catch (dbError) {
-        console.error("[v0] Database fallback failed:", dbError)
+        console.warn("[v0] Database query issue:", dbError)
       }
 
       const { whoEvents } = await import("@/lib/who-data")
 
       try {
         await saveWHOEvents(whoEvents)
-        console.log(`[v0] Saved static fallback data to database: ${whoEvents.length} events`)
+        console.log(`[v0] Saved static fallback data to database after error: ${whoEvents.length} events`)
       } catch (dbError) {
         console.error("[v0] Failed to save static fallback to database:", dbError)
       }
 
+      console.warn(`[v0] Using static fallback after all errors: ${whoEvents.length} events`)
       return NextResponse.json({
         success: true,
         data: whoEvents,
@@ -117,6 +118,7 @@ export async function GET() {
           sheets: ["fallback"],
           fetchedAt: new Date().toISOString(),
           source: "static-fallback",
+          error: "Remote fetch failed",
         },
       })
     }
@@ -363,7 +365,7 @@ export async function GET() {
       return NextResponse.json(
         {
           success: false,
-          error: error instanceof Error ? error.message : "Unknown error occurred",
+          error: "All data sources failed",
           data: [],
         },
         { status: 500 },

@@ -23,6 +23,8 @@ AZURE_OPENAI_DEPLOYMENT_NAME="AFRO-AI"
 
 ### Mapbox (Maps)
 ```bash
+# Get your token from: https://account.mapbox.com/access-tokens/
+# See .env.local.example for variable names
 NEXT_PUBLIC_MAPBOX_TOKEN="your-mapbox-token"
 MAPBOX_ACCESS_TOKEN="your-mapbox-token"
 ```
@@ -53,8 +55,8 @@ MAPBOX_ACCESS_TOKEN="your-mapbox-token"
 - Look for errors in Vercel logs
 
 ### Mapbox Errors
-- Verify NEXT_PUBLIC_MAPBOX_TOKEN is set correctly
-- Token must start with `pk.`
+- Get a free token from [mapbox.com](https://account.mapbox.com/access-tokens/)
+- Configure as shown in .env.local.example
 - Check token is active in Mapbox dashboard
 
 ### AI Analysis Not Working

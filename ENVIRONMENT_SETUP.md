@@ -124,6 +124,15 @@ MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
 2. Create an account or sign in
 3. Go to "Access tokens"
 4. Create a new token or use the default public token
+5. Add the token to your .env.local file (see .env.local.example for variable names)
+
+**Note:** Mapbox tokens are public and meant for client-side use.
+
+**Issue: "Mapbox map not loading"**
+- Get a free token from [mapbox.com](https://account.mapbox.com/access-tokens/)
+- Add to environment variables as shown in .env.local.example
+- Check token is valid and not expired
+- Verify token has proper scopes enabled
 
 ### 5. Setup Instructions
 
@@ -169,6 +178,8 @@ MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
    - `POSTGRES_PASSWORD`
    - `NEXT_PUBLIC_MAPBOX_TOKEN`
    - `MAPBOX_ACCESS_TOKEN`
+
+See .env.local.example for complete list including map configuration.
 
 4. Redeploy your application
 
@@ -224,11 +235,6 @@ The AI system monitors these WHO AFRO data sources:
 - Verify `NEXT_PUBLIC_WHO_DATA_URL` is accessible
 - Check network connectivity
 - Ensure xlsx file format is compatible
-
-**Issue: "Mapbox map not loading"**
-- Confirm `NEXT_PUBLIC_MAPBOX_TOKEN` starts with `pk.`
-- Check token is valid and not expired
-- Verify token has proper scopes enabled
 
 **Issue: "No AI alerts appearing"**
 - AI generates alerts based on outbreak severity

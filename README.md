@@ -42,8 +42,6 @@ This project requires the following environment variables:
 - `POSTGRES_DATABASE` - Database name (who_afro_db)
 - `POSTGRES_USER` - Database username
 - `POSTGRES_PASSWORD` - Database password
-- `NEXT_PUBLIC_MAPBOX_TOKEN` - Mapbox access token for maps
-- `MAPBOX_ACCESS_TOKEN` - Same Mapbox token (server-side)
 
 ### Where to Set Variables
 

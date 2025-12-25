@@ -35,7 +35,7 @@ MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
 - **Azure OpenAI**: [Azure Portal](https://portal.azure.com) → afro-ai-resource → Keys and Endpoint → Copy Key 1
 - **PostgreSQL Password**: Contact your Azure administrator or check Azure Portal
 - **Google Sheets**: The URL is already configured for WHO AFRO data
-- **Mapbox**: [Mapbox Account](https://account.mapbox.com/access-tokens/) → Create token
+- **Mapbox**: Create a free account at [mapbox.com](https://account.mapbox.com/)
 
 ### Step 3: Verify Database Connection
 
@@ -156,8 +156,8 @@ The PostgreSQL database should have:
 
 **Issue:** Blank map or "Invalid token" error
 **Solution:**
-1. Verify `NEXT_PUBLIC_MAPBOX_TOKEN` starts with `pk.`
-2. Check token is valid at [Mapbox Account](https://account.mapbox.com)
+1. Create a Mapbox account and get a public token at [mapbox.com](https://account.mapbox.com/access-tokens/)
+2. Add the token to your environment variables (see .env.local.example)
 3. Token must have proper scopes enabled
 
 ### Database Connection Failed?
@@ -222,10 +222,8 @@ Make sure to add these in Vercel:
 - `POSTGRES_DATABASE`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
-- `NEXT_PUBLIC_MAPBOX_TOKEN`
-- `MAPBOX_ACCESS_TOKEN`
 
-**Note:** The application is configured to work with Azure resources in the `EPROSL-P-EUW-RG01` resource group.
+**Note:** See .env.local.example for complete configuration including map setup.
 
 ---
 

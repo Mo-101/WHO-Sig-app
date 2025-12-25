@@ -19,7 +19,7 @@ This guide will help you set up the WHO Signal Intelligence Dashboard with live 
 
 Create a `.env.local` file in the root directory with the following variables:
 
-\`\`\`bash
+```bash
 # =============================================================================
 # AZURE OPENAI CONFIGURATION (REQUIRED FOR AI FEATURES)
 # =============================================================================
@@ -63,13 +63,12 @@ NEXT_PUBLIC_WHO_DATA_URL=https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/ex
 # MAPBOX CONFIGURATION (REQUIRED FOR MAPS)
 # =============================================================================
 
-# Get your Mapbox token:
-# 1. Go to https://account.mapbox.com/access-tokens/
-# 2. Create a new token or copy your default public token
+# Get your free Mapbox token at: https://account.mapbox.com/access-tokens/
+# See .env.local.example for configuration details
 
 NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
 
-\`\`\`
+```
 
 ---
 
@@ -114,13 +113,13 @@ The system automatically detects multiple column name variations:
 
 ### Example Google Sheet Structure:
 
-\`\`\`
+```
 | Country  | Disease    | Grade   | Status  | Cases | Deaths | Latitude | Longitude | Report Date |
 |----------|------------|---------|---------|-------|--------|----------|-----------|-------------|
 | Nigeria  | Cholera    | Grade 3 | Ongoing | 1500  | 45     | 9.0820   | 8.6753    | 2025-12-15  |
 | Kenya    | Mpox       | Grade 2 | New     | 234   | 12     | -1.2921  | 36.8219   | 2025-12-18  |
 | Ghana    | Measles    | Grade 1 | Ongoing | 89    | 3      | 7.9465   | -1.0232   | 2025-12-10  |
-\`\`\`
+```
 
 ### Multiple Sheets Support:
 
@@ -143,25 +142,25 @@ The system can read **all sheets** in your Google Sheets workbook and combine th
 
 ## 🛠️ Step 3: Install Dependencies
 
-\`\`\`bash
+```bash
 npm install
 # or
 yarn install
 # or
 pnpm install
-\`\`\`
+```
 
 ---
 
 ## 🚀 Step 4: Run the Development Server
 
-\`\`\`bash
+```bash
 npm run dev
 # or
 yarn dev
 # or
 pnpm dev
-\`\`\`
+```
 
 Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 
@@ -173,21 +172,21 @@ Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 
 1. Open browser console (F12)
 2. Look for log messages:
-   \`\`\`
+   ```
    [v0] Fetching WHO data from API route...
    [v0] Workbook sheets: Sheet1, Grade 3 Events, ...
    [v0] Successfully parsed X total events from all sheets
    [v0] Received X events from API
-   \`\`\`
+   ```
 
 3. Verify no error messages appear
 
 ### Check AI Analysis:
 
 1. Look for AI monitoring logs:
-   \`\`\`
+   ```
    [v0] AI monitoring active - analyzing WHO outbreak data...
-   \`\`\`
+   ```
 
 2. Check for AI-generated alerts in the notification bell icon (top right)
 
@@ -227,8 +226,8 @@ Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 **Error:** Map is blank or shows error
 
 **Solutions:**
-1. Verify `NEXT_PUBLIC_MAPBOX_TOKEN` is set in `.env.local`
-2. Check token is valid at https://account.mapbox.com/
+1. Check Mapbox token configuration in environment variables
+2. Verify token is valid at https://account.mapbox.com/
 3. Ensure latitude/longitude values in your data are valid (-90 to 90, -180 to 180)
 
 ### CORS Errors:
@@ -245,7 +244,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the dashboard.
 **Error:** Build fails with module errors
 
 **Solutions:**
-\`\`\`bash
+```bash
 # Clear node modules and reinstall
 rm -rf node_modules package-lock.json
 npm install
@@ -253,13 +252,13 @@ npm install
 # Clear Next.js cache
 rm -rf .next
 npm run dev
-\`\`\`
+```
 
 ---
 
 ## 📦 Data Flow Architecture
 
-\`\`\`
+```
 Google Sheets (XLSX)
     ↓
 Next.js API Route (/api/who-data)
@@ -273,26 +272,26 @@ React State (whoEvents)
 Azure OpenAI Analysis
     ↓
 UI Components (Map, Charts, Metrics)
-\`\`\`
+```
 
 ---
 
 ## 🧪 Testing Your Setup
 
 ### Test 1: Data Fetching
-\`\`\`bash
+```bash
 # Open browser console and run:
 fetch('/api/who-data').then(r => r.json()).then(console.log)
 
 # Expected output:
 # { success: true, data: [...], metadata: {...} }
-\`\`\`
+```
 
 ### Test 2: Azure OpenAI
 The AI will automatically analyze data every 2-5 minutes. Check the browser console for:
-\`\`\`
+```
 [v0] AI monitoring active - analyzing WHO outbreak data...
-\`\`\`
+```
 
 ### Test 3: Map Rendering
 1. Data should appear on map as colored markers
