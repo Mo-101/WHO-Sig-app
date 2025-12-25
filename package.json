@@ -14,7 +14,7 @@
   "dependencies": {
     "@ai-sdk/azure": "2.0.90",
     "@hookform/resolvers": "^3.10.0",
-    "@neondatabase/serverless": "^0.10.3",
+    "@neondatabase/serverless": "1.0.2",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -57,6 +57,8 @@
     "mapbox-gl": "3.17.0",
     "next": "16.0.10",
     "next-themes": "^0.4.6",
+    "pg": "8.16.3",
+    "pg-native": "latest",
     "react": "19.2.0",
     "react-day-picker": "9.8.0",
     "react-dom": "19.2.0",
@@ -83,5 +85,8 @@
     "tailwindcss": "^4.1.9",
     "tsx": "^4.19.2",
     "typescript": "^5"
-  }
+  },
+  "trustedDependencies": [
+    "pg-native"
+  ]
 }

@@ -1,10 +1,13 @@
 import { neon } from "@neondatabase/serverless"
 
-// Use the DATABASE_URL from Neon integration
+// This driver works over HTTP/WebSockets and is compatible with serverless environments
+// It can connect to any PostgreSQL database, not just Neon
 const sql = neon(process.env.DATABASE_URL!)
 
 export async function initializeDatabase() {
   try {
+    console.log("[v0] Initializing Azure PostgreSQL database...")
+
     await sql`
       CREATE TABLE IF NOT EXISTS who_events (
         id SERIAL PRIMARY KEY,
@@ -33,7 +36,6 @@ export async function initializeDatabase() {
     await sql`CREATE INDEX IF NOT EXISTS idx_report_date ON who_events(report_date)`
     await sql`CREATE INDEX IF NOT EXISTS idx_year ON who_events(year)`
 
-    // Create metadata table for tracking data updates
     await sql`
       CREATE TABLE IF NOT EXISTS data_sync_metadata (
         id SERIAL PRIMARY KEY,
@@ -46,7 +48,7 @@ export async function initializeDatabase() {
       )
     `
 
-    console.log("[v0] Database tables initialized successfully")
+    console.log("[v0] Azure PostgreSQL database initialized successfully")
   } catch (error) {
     console.error("[v0] Database initialization error:", error)
     throw error
@@ -99,18 +101,16 @@ export async function saveWHOEvents(events: any[]) {
       `
     }
 
-    // Record sync metadata
     await sql`
       INSERT INTO data_sync_metadata (last_sync_time, records_synced, source_url, sync_status)
       VALUES (CURRENT_TIMESTAMP, ${events.length}, ${process.env.NEXT_PUBLIC_WHO_DATA_URL || ""}, 'success')
     `
 
-    console.log(`[v0] Successfully saved ${events.length} events to database`)
+    console.log(`[v0] Successfully saved ${events.length} events to Azure PostgreSQL`)
     return true
   } catch (error: any) {
-    console.error("[v0] Error saving events to database:", error)
+    console.error("[v0] Error saving events to Azure PostgreSQL:", error)
 
-    // Record failed sync
     try {
       await sql`
         INSERT INTO data_sync_metadata (last_sync_time, records_synced, source_url, sync_status, error_message)
@@ -146,9 +146,10 @@ export async function getWHOEventsFromDB() {
       ORDER BY report_date DESC
     `
 
+    console.log(`[v0] Retrieved ${result.length} events from Azure PostgreSQL`)
     return result
   } catch (error) {
-    console.error("[v0] Error fetching events from database:", error)
+    console.error("[v0] Error fetching events from Azure PostgreSQL:", error)
     throw error
   }
 }
@@ -163,7 +164,7 @@ export async function getLastSyncMetadata() {
 
     return result[0] || null
   } catch (error) {
-    console.error("[v0] Error fetching sync metadata:", error)
+    console.error("[v0] Error fetching sync metadata from Azure PostgreSQL:", error)
     return null
   }
 }

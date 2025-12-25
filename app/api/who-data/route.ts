@@ -38,39 +38,33 @@ export async function GET() {
     if (!shouldRefresh && lastSync?.sync_status === "success") {
       console.log("[v0] Returning cached data from database")
       const cachedEvents = await getWHOEventsFromDB()
-      return NextResponse.json({
-        success: true,
-        data: cachedEvents,
-        metadata: {
-          totalEvents: cachedEvents.length,
-          fetchedAt: lastSync.last_sync_time,
-          source: "database-cache",
-          cached: true,
-        },
-      })
+
+      if (cachedEvents.length === 0) {
+        console.log("[v0] Database is empty, forcing refresh")
+      } else {
+        return NextResponse.json({
+          success: true,
+          data: cachedEvents,
+          metadata: {
+            totalEvents: cachedEvents.length,
+            fetchedAt: lastSync.last_sync_time,
+            source: "database-cache",
+            cached: true,
+          },
+        })
+      }
     }
 
     let dataUrl = process.env.NEXT_PUBLIC_WHO_DATA_URL || ""
 
-    if (dataUrl.includes("docs.google.com/spreadsheets")) {
-      // Handle both regular spreadsheet URLs and published URLs
-      if (dataUrl.includes("/d/e/")) {
-        // Published URL format: /d/e/{SHEET_ID}
-        const match = dataUrl.match(/\/d\/e\/([a-zA-Z0-9-_]+)/)
-        if (match) {
-          const sheetId = match[1]
-          dataUrl = `https://docs.google.com/spreadsheets/d/e/${sheetId}/pub?output=xlsx`
-          console.log(`[v0] Converted to published export URL: ${dataUrl}`)
-        }
-      } else if (dataUrl.includes("/d/")) {
-        // Regular spreadsheet URL format: /d/{SHEET_ID}
-        const match = dataUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)
-        if (match) {
-          const sheetId = match[1]
-          dataUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`
-          console.log(`[v0] Converted to regular export URL: ${dataUrl}`)
-        }
-      }
+    if (
+      !dataUrl ||
+      dataUrl ===
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA"
+    ) {
+      dataUrl =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA/pub?output=xlsx"
+      console.log("[v0] Using complete published URL")
     }
 
     console.log(`[v0] Fetching WHO data from: ${dataUrl}`)
@@ -107,7 +101,14 @@ export async function GET() {
       }
 
       const { whoEvents } = await import("@/lib/who-data")
-      console.log(`[v0] Using static fallback data: ${whoEvents.length} events`)
+
+      try {
+        await saveWHOEvents(whoEvents)
+        console.log(`[v0] Saved static fallback data to database: ${whoEvents.length} events`)
+      } catch (dbError) {
+        console.error("[v0] Failed to save static fallback to database:", dbError)
+      }
+
       return NextResponse.json({
         success: true,
         data: whoEvents,
@@ -338,6 +339,14 @@ export async function GET() {
 
     try {
       const { whoEvents } = await import("@/lib/who-data")
+
+      try {
+        await saveWHOEvents(whoEvents)
+        console.log(`[v0] Saved static fallback data to database after error: ${whoEvents.length} events`)
+      } catch (dbError) {
+        console.error("[v0] Failed to save static fallback to database:", dbError)
+      }
+
       console.warn(`[v0] Using static fallback after all errors: ${whoEvents.length} events`)
       return NextResponse.json({
         success: true,

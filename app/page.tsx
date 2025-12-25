@@ -19,27 +19,30 @@ import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { analyzeOutbreakData, detectAnomalies } from "@/lib/ai-analysis"
 
-const fetcher = (url: string) =>
-  fetch(url)
-    .then((res) => res.json())
-    .then((json) => {
-      console.log("[v0] API response:", json)
-      // Handle structured API response
-      if (json.success && json.data) {
-        return Array.isArray(json.data) ? json.data : []
-      }
-      // Handle direct array response (legacy)
-      if (Array.isArray(json)) {
-        return json
-      }
-      // Fallback to empty array
-      console.warn("[v0] Unexpected API response format, returning empty array")
-      return []
-    })
-    .catch((error) => {
-      console.error("[v0] Fetch error:", error)
-      return [] // Return empty array on error
-    })
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`)
+  }
+  const json = await res.json()
+  console.log("[v0] API response received:", {
+    success: json.success,
+    dataLength: json.data?.length,
+    source: json.metadata?.source,
+  })
+
+  // Handle structured API response
+  if (json.success && Array.isArray(json.data)) {
+    return json
+  }
+
+  // Fallback for legacy response format
+  if (Array.isArray(json)) {
+    return { success: true, data: json, metadata: { source: "legacy" } }
+  }
+
+  throw new Error("Invalid API response format")
+}
 
 export default function DashboardPage() {
   const {
@@ -47,21 +50,24 @@ export default function DashboardPage() {
     error,
     isLoading,
     mutate,
-  } = useSWR<any>(
-    "/api/who-data",
-    async (url) => {
-      const res = await fetch(url)
-      if (!res.ok) throw new Error("Failed to fetch")
-      return res.json()
+  } = useSWR("/api/who-data", fetcher, {
+    refreshInterval: 300000, // 5 minutes
+    revalidateOnFocus: false,
+    onSuccess: (data) => {
+      console.log("[v0] Data loaded successfully:", data.data?.length, "events")
     },
-    {
-      refreshInterval: 300000,
-      revalidateOnFocus: false,
-      onError: (err) => console.error("[v0] SWR Error:", err),
+    onError: (err) => {
+      console.error("[v0] SWR Error:", err.message)
     },
-  )
+  })
 
-  const whoEvents = Array.isArray(apiResponse?.data) ? apiResponse.data : []
+  const whoEvents = useMemo(() => {
+    if (!apiResponse) return []
+    if (Array.isArray(apiResponse.data)) return apiResponse.data
+    return []
+  }, [apiResponse])
+
+  console.log("[v0] whoEvents array length:", whoEvents.length)
 
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
