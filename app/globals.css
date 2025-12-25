@@ -3,80 +3,124 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NEUMORPHIC DESIGN SYSTEM - Exact Reference Image Specifications
+   Shadow 2: Blur 50, X-28, Y-28, 16%, #002750
+   Shadow 4: Blur 45, X-25, Y-25, 100%, #FFFFFF
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  --background: 232 238 245;
-  --foreground: 232 238 245;
-  --card: 232 238 245;
-  --card-foreground: 44 62 80;
-  --popover: 232 238 245;
-  --popover-foreground: 44 62 80;
-  --primary: 0 158 219;
+  /* ─── Exact Neumorphic Shadow Colors from Reference ─── */
+  --neu-shadow-dark: rgba(0, 39, 80, 0.16); /* #002750 at 16% */
+  --neu-shadow-light: rgba(255, 255, 255, 1); /* #FFFFFF at 100% */
+  --neu-bg: #ffffff; /* Clean light background */
+  --neu-bg-white: #ffffff; /* Pure white for cards */
+
+  /* ─── Base Theme Colors ─── */
+  --background: 255, 255, 255;
+  --foreground: 30 41 59;
+  --card: 255 255 255;
+  --card-foreground: 30 41 59;
+  --popover: 255 255 255;
+  --popover-foreground: 30 41 59;
+
+  /* ─── Primary & Accent - Blue Theme ─── */
+  --primary: 59 130 246;
   --primary-foreground: 255 255 255;
-  --secondary: 106 122 148;
+  --secondary: 100 116 139;
   --secondary-foreground: 255 255 255;
-  --muted: 209 217 230;
-  --muted-foreground: 106 122 148;
-  --accent: 0 86 179;
+  --accent: 16 16 238; /* #1010EE from reference */
   --accent-foreground: 255 255 255;
-  --destructive: 255 51 85;
+
+  /* ─── Muted & Borders ─── */
+  --muted: 226 232 240;
+  --muted-foreground: 100 116 139;
+  --border: 226 232 240;
+  --input: 255 255 255;
+  --ring: 59 130 246;
+
+  /* ─── Status Colors ─── */
+  --destructive: 239 68 68;
   --destructive-foreground: 255 255 255;
-  --border: 209 217 230;
-  --input: 232 238 245;
-  --ring: 0 158 219;
+  --success: 34 197 94;
+  --success-foreground: 255 255 255;
+  --warning: 251 146 60;
+  --warning-foreground: 255 255 255;
+
+  /* ─── Grade Colors (Health Dashboard) ─── */
+  --grade-3: 239 68 68;
+  --grade-2: 251 146 60;
+  --grade-1: 250 204 21;
+  --grade-u: 148 163 184;
+
+  /* ─── Charts ─── */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.75rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* ─── Border Radius Scale ─── */
+  --radius: 1rem;
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-full: 9999px;
+
+  /* ─── Sidebar ─── */
+  --sidebar: 240 244 248;
+  --sidebar-foreground: 30 41 59;
+  --sidebar-primary: 59 130 246;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 37 99 235;
+  --sidebar-accent-foreground: 255 255 255;
+  --sidebar-border: 226 232 240;
+  --sidebar-ring: 59 130 246;
 }
 
 .dark {
-  --background: 15 20 25;
+  /* ─── Dark Neumorphic Palette ─── */
+  --neu-bg: #1e293b;
+  --neu-bg-white: #0f172a;
+  --neu-shadow-dark: rgba(0, 0, 0, 0.5);
+  --neu-shadow-light: rgba(51, 65, 85, 0.4);
+  --neu-shadow-dark-strong: rgba(0, 0, 0, 0.6);
+  --neu-shadow-light-strong: rgba(51, 65, 85, 0.5);
+
+  --background: 15 23 42;
   --foreground: 226 232 240;
-  --card: 26 31 38;
+  --card: 30 41 59;
   --card-foreground: 226 232 240;
-  --popover: 18 25 35;
+  --popover: 30 41 59;
   --popover-foreground: 226 232 240;
-  --primary: 59 130 246;
-  --primary-foreground: 15 20 25;
-  --secondary: 51 65 85;
+  --primary: 96 165 250;
+  --primary-foreground: 15 23 42;
+  --secondary: 71 85 105;
   --secondary-foreground: 226 232 240;
   --muted: 51 65 85;
   --muted-foreground: 148 163 184;
-  --accent: 59 130 246;
-  --accent-foreground: 15 20 25;
-  --destructive: 239 68 68;
-  --destructive-foreground: 226 232 240;
-  --border: 56 68 82;
-  --input: 56 68 82;
-  --ring: 59 130 246;
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --accent: 96 165 250;
+  --accent-foreground: 15 23 42;
+  --border: 51 65 85;
+  --input: 51 65 85;
+  --ring: 96 165 250;
+
+  --sidebar: 15 23 42;
+  --sidebar-foreground: 226 232 240;
+  --sidebar-primary: 96 165 250;
+  --sidebar-primary-foreground: 15 23 42;
+  --sidebar-accent: 51 65 85;
+  --sidebar-accent-foreground: 226 232 240;
+  --sidebar-border: 51 65 85;
+  --sidebar-ring: 96 165 250;
 }
 
 @theme inline {
-  /* optional: --font-sans, --font-serif, --font-mono if they are applied in the layout.tsx */
-  --font-sans: "Inter", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -101,10 +145,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -115,190 +159,357 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   BASE LAYER
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 @layer base {
   * {
-    border-color: rgb(var(--color-border));
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    background-color: rgb(var(--color-background));
-    color: rgb(var(--color-foreground));
+    background: #f0f4f8;
+    color: rgb(var(--foreground));
     font-family: var(--font-sans);
-    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    line-height: 1.6;
+  }
+
+  .dark body {
+    background: #0f172a;
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   NEUMORPHIC UTILITIES - EXACT REFERENCE IMAGE SPECIFICATIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 @layer utilities {
-  /* Enhanced neumorphic shadows to match reference image - softer, more subtle */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     EXACT SHADOW SPECIFICATIONS FROM REFERENCE IMAGE
+     Shadow 2 (Dark): 50px blur, -28px offset, 16% opacity, #002750
+     Shadow 4 (Light): 45px blur, -25px/-25px offset, 100% opacity, #FFFFFF
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Standard raised shadow - exact reference specs */
   .neu-shadow {
-    box-shadow: 8px 8px 16px rgba(194, 209, 224, 0.6), -8px -8px 16px rgba(255, 255, 255, 0.8);
+    box-shadow: -28px -28px 50px rgba(0, 39, 80, 0.16), 28px 28px 45px rgba(255, 255, 255, 1);
   }
 
+  /* Extra small shadow - scaled down proportionally */
+  .neu-shadow-xs {
+    box-shadow: -8px -8px 15px rgba(0, 39, 80, 0.12), 8px 8px 13px rgba(255, 255, 255, 0.9);
+  }
+
+  /* Small shadow - scaled down */
   .neu-shadow-sm {
-    box-shadow: 4px 4px 12px rgba(194, 209, 224, 0.5), -4px -4px 12px rgba(255, 255, 255, 0.8);
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.14), 14px 14px 23px rgba(255, 255, 255, 0.95);
   }
 
+  /* Medium shadow - between small and standard */
+  .neu-shadow-md {
+    box-shadow: -21px -21px 38px rgba(0, 39, 80, 0.15), 21px 21px 34px rgba(255, 255, 255, 0.98);
+  }
+
+  /* Large shadow - scaled up */
+  .neu-shadow-lg {
+    box-shadow: -35px -35px 60px rgba(0, 39, 80, 0.18), 35px 35px 55px rgba(255, 255, 255, 1);
+  }
+
+  /* Extra large shadow - maximum depth */
+  .neu-shadow-xl {
+    box-shadow: -42px -42px 70px rgba(0, 39, 80, 0.2), 42px 42px 65px rgba(255, 255, 255, 1);
+  }
+
+  /* Inset shadows - for pressed/input states */
   .neu-shadow-inset {
-    box-shadow: inset 6px 6px 12px rgba(194, 209, 224, 0.4), inset -6px -6px 12px rgba(255, 255, 255, 0.7);
+    box-shadow: inset 14px 14px 28px rgba(0, 39, 80, 0.14), inset -14px -14px 24px rgba(255, 255, 255, 0.95);
+  }
+
+  .neu-shadow-inset-xs {
+    box-shadow: inset 6px 6px 12px rgba(0, 39, 80, 0.1), inset -6px -6px 10px rgba(255, 255, 255, 0.85);
   }
 
   .neu-shadow-inset-sm {
-    box-shadow: inset 3px 3px 8px rgba(194, 209, 224, 0.4), inset -3px -3px 8px rgba(255, 255, 255, 0.7);
+    box-shadow: inset 10px 10px 20px rgba(0, 39, 80, 0.12), inset -10px -10px 18px rgba(255, 255, 255, 0.9);
   }
 
-  /* Soft pressed/active state */
+  .neu-shadow-inset-lg {
+    box-shadow: inset 18px 18px 36px rgba(0, 39, 80, 0.16), inset -18px -18px 32px rgba(255, 255, 255, 1);
+  }
+
+  /* Pressed state - buttons when clicked */
   .neu-pressed {
-    box-shadow: inset 4px 4px 10px rgba(194, 209, 224, 0.5), inset -4px -4px 10px rgba(255, 255, 255, 0.6);
+    box-shadow: inset 12px 12px 24px rgba(0, 39, 80, 0.18), inset -12px -12px 20px rgba(255, 255, 255, 0.9);
   }
 
-  /* Elevated hover state */
+  /* Hover elevated state */
   .neu-elevated {
-    box-shadow: 12px 12px 20px rgba(194, 209, 224, 0.7), -12px -12px 20px rgba(255, 255, 255, 0.9);
+    box-shadow: -32px -32px 55px rgba(0, 39, 80, 0.18), 32px 32px 50px rgba(255, 255, 255, 1);
+    transform: translateY(-3px);
   }
 
-  /* Updated ticker wrapper for pure white background */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NEUMORPHIC CARDS - Pure White Background with Exact Shadows
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Standard card - exact reference specs */
+  .neu-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: -28px -28px 50px rgba(0, 39, 80, 0.16), 28px 28px 45px rgba(255, 255, 255, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .neu-card:hover {
+    box-shadow: -32px -32px 55px rgba(0, 39, 80, 0.18), 32px 32px 50px rgba(255, 255, 255, 1);
+    transform: translateY(-4px);
+  }
+
+  /* Flat card variant */
+  .neu-card-flat {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: -21px -21px 38px rgba(0, 39, 80, 0.15), 21px 21px 34px rgba(255, 255, 255, 0.98);
+  }
+
+  /* Small card */
+  .neu-card-sm {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.14), 14px 14px 23px rgba(255, 255, 255, 0.95);
+    transition: all 0.2s ease;
+  }
+
+  /* Large card */
+  .neu-card-lg {
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: -35px -35px 60px rgba(0, 39, 80, 0.18), 35px 35px 55px rgba(255, 255, 255, 1);
+    transition: all 0.3s ease;
+  }
+
+  /* Extra large card */
+  .neu-card-xl {
+    background: #ffffff;
+    border-radius: 28px;
+    box-shadow: -42px -42px 70px rgba(0, 39, 80, 0.2), 42px 42px 65px rgba(255, 255, 255, 1);
+  }
+
+  /* Card with subtle border */
+  .neu-card-bordered {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    box-shadow: -24px -24px 45px rgba(0, 39, 80, 0.14), 24px 24px 40px rgba(255, 255, 255, 0.98);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NEUMORPHIC BUTTONS - Interactive with Exact Shadow Feedback
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Standard button */
+  .neu-btn {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 16px;
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.14), 14px 14px 23px rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+  }
+
+  .neu-btn:hover {
+    box-shadow: -18px -18px 32px rgba(0, 39, 80, 0.16), 18px 18px 28px rgba(255, 255, 255, 1);
+    transform: translateY(-2px);
+  }
+
+  .neu-btn:active,
+  .neu-btn.active {
+    box-shadow: inset 10px 10px 20px rgba(0, 39, 80, 0.14), inset -10px -10px 18px rgba(255, 255, 255, 0.9);
+    transform: translateY(0);
+  }
+
+  /* Small button */
+  .neu-btn-sm {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 12px;
+    box-shadow: -10px -10px 18px rgba(0, 39, 80, 0.12), 10px 10px 16px rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  /* Large button */
+  .neu-btn-lg {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 20px;
+    box-shadow: -21px -21px 38px rgba(0, 39, 80, 0.15), 21px 21px 34px rgba(255, 255, 255, 0.98);
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  /* Round button */
+  .neu-btn-round {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 50%;
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.14), 14px 14px 23px rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  /* Pill button */
+  .neu-btn-pill {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 9999px;
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.14), 14px 14px 23px rgba(255, 255, 255, 0.95);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  /* Primary button with blue accent */
+  .neu-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #1010ee 100%);
+    color: white;
+    border: none;
+    border-radius: 16px;
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.14), 14px 14px 23px rgba(255, 255, 255, 0.95), 0 6px 20px
+      rgba(16, 16, 238, 0.35);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .neu-btn-primary:hover {
+    box-shadow: -18px -18px 32px rgba(0, 39, 80, 0.16), 18px 18px 28px rgba(255, 255, 255, 1), 0 8px 24px
+      rgba(16, 16, 238, 0.45);
+    transform: translateY(-2px);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NEUMORPHIC INPUTS - Clean Inset Fields with Exact Shadows
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Standard input */
+  .neu-input {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 14px;
+    box-shadow: inset 10px 10px 20px rgba(0, 39, 80, 0.12), inset -10px -10px 18px rgba(255, 255, 255, 0.9);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+
+  .neu-input:focus {
+    box-shadow: inset 12px 12px 24px rgba(0, 39, 80, 0.14), inset -12px -12px 20px rgba(255, 255, 255, 0.95), 0 0 0 3px
+      rgba(16, 16, 238, 0.15);
+  }
+
+  /* Small input */
+  .neu-input-sm {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 10px;
+    box-shadow: inset 6px 6px 12px rgba(0, 39, 80, 0.1), inset -6px -6px 10px rgba(255, 255, 255, 0.85);
+    outline: none;
+  }
+
+  /* Large input */
+  .neu-input-lg {
+    background: #f0f4f8;
+    border: none;
+    border-radius: 18px;
+    box-shadow: inset 14px 14px 28px rgba(0, 39, 80, 0.14), inset -14px -14px 24px rgba(255, 255, 255, 0.95);
+    outline: none;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     NEUMORPHIC PANELS & SIDEBARS - Exact Shadow Application
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Panel with white background */
+  .neu-panel {
+    background: #ffffff;
+    border-radius: 22px;
+    box-shadow: -25px -25px 48px rgba(0, 39, 80, 0.15), 25px 25px 43px rgba(255, 255, 255, 0.98);
+  }
+
+  /* Sidebar with light background */
+  .neu-sidebar {
+    background: #f0f4f8;
+    box-shadow: 25px 0 48px rgba(0, 39, 80, 0.14);
+  }
+
+  .neu-sidebar-right {
+    background: #f0f4f8;
+    box-shadow: -25px 0 48px rgba(0, 39, 80, 0.14);
+  }
+
+  /* Sidebar item */
+  .neu-sidebar-item {
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: -12px -12px 22px rgba(0, 39, 80, 0.12), 12px 12px 20px rgba(255, 255, 255, 0.92);
+    transition: all 0.2s ease;
+  }
+
+  .neu-sidebar-item:hover {
+    box-shadow: -16px -16px 28px rgba(0, 39, 80, 0.14), 16px 16px 25px rgba(255, 255, 255, 0.96);
+    transform: translateX(2px);
+  }
+
+  .neu-sidebar-item.active {
+    box-shadow: inset 8px 8px 16px rgba(0, 39, 80, 0.12), inset -8px -8px 14px rgba(255, 255, 255, 0.9);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     LIST ITEMS & WATCHLIST - Clean White Cards
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* List item with exact shadows */
+  .neu-list-item {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: -18px -18px 35px rgba(0, 39, 80, 0.14), 18px 18px 30px rgba(255, 255, 255, 0.96);
+    transition: all 0.2s ease;
+  }
+
+  .neu-list-item:hover {
+    box-shadow: -12px -12px 22px rgba(0, 39, 80, 0.12), 12px 12px 20px rgba(255, 255, 255, 0.92);
+  }
+
+  /* Flat list item variant */
+  .neu-list-item-flat {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: -14px -14px 25px rgba(0, 39, 80, 0.12), 14px 14px 23px rgba(255, 255, 255, 0.94);
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TICKER / MARQUEE - Inset Design
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  /* Ticker with inset shadow */
   .ticker-wrapper {
-    background: linear-gradient(90deg, #ebfaff 0%, #d1dae6 50%, #ebfaff 100%);
+    background: #f0f4f8;
+    border-radius: 16px;
+    box-shadow: inset 10px 10px 20px rgba(0, 39, 80, 0.12), inset -10px -10px 18px rgba(255, 255, 255, 0.9);
     overflow: hidden;
     white-space: nowrap;
-    border-radius: 24px;
-    padding: 10px 0;
-    box-shadow: 6px 6px 14px rgba(194, 209, 224, 0.5), -6px -6px 14px rgba(255, 255, 255, 0.8);
   }
 
   .ticker-content {
     display: inline-block;
-    animation: ticker 30s linear infinite;
-    padding-left: 100%;
-    font-size: 11px;
-    font-weight: 600;
-    color: #0056b3;
-    letter-spacing: 0.5px;
-  }
-
-  @keyframes ticker {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
-  }
-
-  /* Adding dark theme ticker styles */
-  .dark-ticker-wrapper {
-    background: linear-gradient(90deg, #0f1419 0%, #1a1f26 50%, #0f1419 100%);
-    overflow: hidden;
-    white-space: nowrap;
-    border-radius: 12px;
-    padding: 8px 0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  }
-
-  .dark-ticker-wrapper .ticker-content {
-    display: inline-block;
-    animation: ticker 30s linear infinite;
-    padding-left: 100%;
-    font-size: 11px;
-    font-weight: 600;
-    color: #3b82f6;
-    letter-spacing: 0.5px;
-  }
-
-  /* Adding custom scrollbar styling for right sidebar - white/invisible */
-  .right-sidebar::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .right-sidebar::-webkit-scrollbar-track {
-    background: #ededed;
-  }
-
-  .right-sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 2px;
-  }
-
-  .right-sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(237, 237, 237);
-  }
-
-  /* Firefox scrollbar styling */
-  .right-sidebar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
-  }
-
-  /* Dark theme scrollbar for right sidebar */
-  .dark .right-sidebar::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.3);
-  }
-
-  .dark .right-sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.5);
-  }
-
-  .dark .right-sidebar {
-    scrollbar-color: rgba(59, 130, 246, 0.3) transparent;
-  }
-
-  /* Adding elevated dark theme glassmorphic styles */
-  .dark-glass {
-    background: rgba(26, 31, 38, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-
-  .dark-card-elevated {
-    background: rgba(15, 20, 25, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-  }
-
-  /* Adding subtle borderless scrollbar for light theme sidebars */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(209, 217, 230, 0.4);
-    border-radius: 2px;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(209, 217, 230, 0.6);
-  }
-
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(209, 217, 230, 0.4) transparent;
-  }
-
-  /* Adding subtle borderless scrollbar for dark theme sidebars */
-  .custom-scrollbar-dark::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .custom-scrollbar-dark::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .custom-scrollbar-dark::-webkit-scrollbar-thumb {
-    background: rgba(59, 130, 246, 0.2);
-    border-radius: 2px;
-  }
-
-  .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover {
-    background: rgba(59, 130, 246, 0.4);
-  }
-
-  .custom-scrollbar-dark {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(59, 130, 246, 0.2) transparent;
-  }
-}
+    animation: ticker 35s linear infinite;
+    font-size: 11px; /* Corrected: Added unit and semicolon */
+  } /* Added closing brace for .ticker-content */
+} /* Added closing brace for @layer utilities */

@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "WHO Signal II - Disease Outbreak Monitor",
+  title: "WHO Signal - Disease Outbreak Monitor",
   description: "Global disease outbreak monitoring and surveillance dashboard",
   generator: "v0.app",
   icons: {
