@@ -28,6 +28,11 @@ export function AIAlertPopup({ alert, onDismiss, onViewDetails, onJumpToLocation
   const [isVisible, setIsVisible] = useState(false)
   const [autoCloseTimer, setAutoCloseTimer] = useState<NodeJS.Timeout | null>(null)
 
+  // Safety check for alert object
+  if (!alert) {
+    return null
+  }
+
   useEffect(() => {
     setIsVisible(true)
 
@@ -86,7 +91,7 @@ export function AIAlertPopup({ alert, onDismiss, onViewDetails, onJumpToLocation
     },
   }
 
-  const colors = alertColors[alert.alertLevel]
+  const colors = alertColors[alert.alertLevel] || alertColors.medium
 
   return (
     <div
@@ -116,6 +121,8 @@ export function AIAlertPopup({ alert, onDismiss, onViewDetails, onJumpToLocation
               handleClose()
             }}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            title="Close alert"
+            aria-label="Close alert"
           >
             <X className="h-4 w-4" />
           </button>

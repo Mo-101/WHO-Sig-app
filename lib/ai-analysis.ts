@@ -10,7 +10,6 @@ import { WHO_SYSTEM_PROMPT, WHO_TRAINING_EXAMPLES, WHO_ANALYSIS_FRAMEWORK } from
 const azure = createAzure({
   resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  apiVersion: "2024-02-01", // Stable version with v2 specification
 })
 
 const afroAI = azure("AFRO-AI")
@@ -55,20 +54,13 @@ export async function analyzeOutbreakData(events: any[]) {
     schema: outbreakAnalysisSchema,
     prompt: `${WHO_SYSTEM_PROMPT}
 
-MONITORED DATA SOURCES:
-${getDataSourcesContext()}
+Analyze this outbreak data for WHO African region:
 
-TRAINING CONTEXT:
-${WHO_TRAINING_EXAMPLES.map((ex) => `${ex.role}: ${ex.content}`).join("\n\n")}
-
-OUTBREAK DATA TO ANALYZE:
-${JSON.stringify(events, null, 2)}
+${JSON.stringify(events.slice(0, 5), null, 2)}
 
 ${WHO_ANALYSIS_FRAMEWORK}
 
-Provide comprehensive risk assessment using WHO terminology and grading standards.
-Consider regional patterns, disease-specific factors, and response capacity in African context.`,
-    maxTokens: 2000,
+Provide risk assessment using WHO grading: Grade 3 (critical), Grade 2 (high), Grade 1 (medium), Grade 0 (low).`,
   })
 
   return object
@@ -80,23 +72,14 @@ export async function detectAnomalies(events: any[], historicalData?: any[]) {
     schema: anomalyDetectionSchema,
     prompt: `${WHO_SYSTEM_PROMPT}
 
-Analyze recent WHO disease events for anomalies using African outbreak patterns and epidemiological indicators.
+Analyze recent WHO disease events for anomalies:
 
 RECENT EVENTS:
-${JSON.stringify(events, null, 2)}
+${JSON.stringify(events.slice(0, 3), null, 2)}
 
-${historicalData ? `HISTORICAL CONTEXT:\n${JSON.stringify(historicalData, null, 2)}` : ""}
+${historicalData ? `HISTORICAL:\n${JSON.stringify(historicalData.slice(0, 2), null, 2)}` : ""}
 
-DETECTION CRITERIA:
-- Unusual spikes: >50% increase in cases week-over-week
-- Rapid geographic spread: Multi-district/country within 2 weeks
-- CFR changes: Significant deviation from disease norm
-- Grade escalations: Ungraded → Grade 2/3
-- Seasonal anomalies: Off-season outbreaks
-- Cross-border patterns: Simultaneous events in neighboring countries
-
-Consider African context: rainy season impacts, population movements, healthcare access, and endemic disease baselines.`,
-    maxTokens: 1500,
+Look for: spikes >50%, rapid spread, unusual patterns, seasonal anomalies.`,
   })
 
   return object
@@ -105,123 +88,47 @@ Consider African context: rainy season impacts, population movements, healthcare
 export async function generateOutbreakReport(events: any[], timeframe: string) {
   const { text } = await generateText({
     model: afroAI,
-    prompt: `${getEnhancedSystemPrompt()}
+    prompt: `${WHO_SYSTEM_PROMPT}
 
-Generate a comprehensive WHO AFRO outbreak intelligence report for ${timeframe}.
+Generate WHO AFRO outbreak intelligence report for ${timeframe}.
 
 DATA:
-${JSON.stringify(events, null, 2)}
+${JSON.stringify(events.slice(0, 10), null, 2)}
 
-REPORT STRUCTURE:
-
-1. EXECUTIVE SUMMARY
-   - Overall situation snapshot
-   - Key statistics (events, countries, cases, deaths)
-   - Priority concerns requiring immediate attention
-
-2. REGIONAL ANALYSIS
-   - West Africa outbreak summary
-   - East Africa outbreak summary
-   - Central Africa outbreak summary
-   - Southern Africa outbreak summary
-   - Cross-regional patterns
-
-3. DISEASE-SPECIFIC INTELLIGENCE
-   - Priority disease updates with trends
-   - CFR analysis and severity assessment
-   - Transmission patterns and R0 estimates
-
-4. GRADING ANALYSIS
-   - Grade 3 events: Detailed situation and response needs
-   - Grade 2 events: Monitoring and support requirements
-   - Grade 1 events: Standard surveillance status
-   - Ungraded events: Assessment pending
-
-5. EPIDEMIOLOGICAL TRENDS
-   - Increasing threats and emerging concerns
-   - Stable situations requiring sustained monitoring  
-   - Declining outbreaks and response success
-
-6. RISK ASSESSMENT
-   - Geographic spread risk (low/medium/high/critical)
-   - Healthcare system impact
-   - Vulnerable populations
-   - Resource gaps
-
-7. STRATEGIC RECOMMENDATIONS
-   - Priority response actions
-   - Resource allocation needs
-   - Surveillance enhancement requirements
-   - Inter-country coordination opportunities
-   - Technical assistance priorities
-
-Use WHO AFRO terminology, cite data sources, and maintain professional technical tone.`,
-    maxTokens: 3000,
+Include: executive summary, regional analysis, disease-specific updates, grading analysis, trends, risk assessment, recommendations.`,
   })
 
   return text
 }
 
 export async function queryOutbreakData(question: string, events: any[]) {
-  const messages = [
-    {
-      role: "system" as const,
-      content: WHO_SYSTEM_PROMPT,
-    },
-    ...WHO_TRAINING_EXAMPLES.map((ex) => ({
-      role: ex.role as "user" | "assistant",
-      content: ex.content,
-    })),
-    {
-      role: "user" as const,
-      content: `MONITORED DATA SOURCES:
-${getDataSourcesContext()}
-
-USER QUESTION: ${question}
-
-AVAILABLE OUTBREAK DATA:
-${JSON.stringify(events, null, 2)}
-
-Provide a precise, context-aware answer using the patterns shown in training examples.`,
-    },
-  ]
-
   const { text } = await generateText({
     model: afroAI,
-    messages: messages,
-    maxTokens: 1000,
+    prompt: `${WHO_SYSTEM_PROMPT}
+
+Question: ${question}
+
+Available outbreak data:
+${JSON.stringify(events.slice(0, 5), null, 2)}
+
+Provide precise answer using WHO terminology and African regional context.`,
   })
 
   return text
 }
 
 export async function analyzeDataSourcesForAlerts(events: any[], dataSourceStatuses?: any[]) {
-  const sourcesList = WHO_DATA_SOURCES.map((s) => `${s.name} (${s.url})`).join("\n")
-
   const { object } = await generateObject({
     model: afroAI,
     schema: dataSourceMonitoringSchema,
-    prompt: `You are monitoring WHO disease outbreak data sources for the African region.
+    prompt: `Monitor WHO disease outbreak data sources for African region.
 
-Available Data Sources:
-${sourcesList}
+Current events:
+${JSON.stringify(events.slice(0, 5), null, 2)}
 
-Current Outbreak Events:
-${JSON.stringify(events.slice(0, 10), null, 2)}
+${dataSourceStatuses ? `Source status:\n${JSON.stringify(dataSourceStatuses.slice(0, 3), null, 2)}` : ""}
 
-${dataSourceStatuses ? `Data Source Status:\n${JSON.stringify(dataSourceStatuses, null, 2)}` : ""}
-
-Analyze the current situation and determine if an alert should be generated based on:
-1. Severity of active outbreaks (Grade 3 = critical, Grade 2 = high priority)
-2. Number of simultaneous outbreaks across multiple countries
-3. Rapid disease spread patterns
-4. High case/death counts
-5. Emergence of new diseases or unusual patterns
-6. Data source availability issues
-
-Generate an alert if there are concerning patterns that require WHO attention.
-Provide actionable insights and recommendations.`,
-    maxTokens: 2000,
+Check for: Grade 3 events, multiple simultaneous outbreaks, rapid spread, high case counts, new diseases.`,
   })
 
   return object
@@ -231,30 +138,14 @@ export async function analyzeOutbreakDataWithSources(events: any[], dataSources:
   const { object } = await generateObject({
     model: afroAI,
     schema: outbreakAnalysisSchema,
-    prompt: `Analyze WHO disease outbreak data from multiple monitoring sources:
+    prompt: `Analyze WHO disease outbreak data:
 
-Data Sources Being Monitored:
-${dataSources.map((s) => `- ${s.name}: ${s.description}`).join("\n")}
+Data sources: ${dataSources.length} monitoring sources
 
-Current Outbreak Events:
-${JSON.stringify(events, null, 2)}
+Current events:
+${JSON.stringify(events.slice(0, 5), null, 2)}
 
-Provide comprehensive risk assessment:
-1. Overall alert level (critical/high/medium/low)
-2. Risk score (0-100)
-3. Executive summary
-4. Key findings from the data
-5. Recommended actions for WHO response
-6. Affected countries
-7. Trend analysis
-
-Consider:
-- Geographic spread patterns
-- Disease severity and transmission
-- Healthcare system capacity
-- Population vulnerability
-- Resource allocation needs`,
-    maxTokens: 2000,
+Provide: alert level, risk score (0-100), summary, findings, recommendations, affected countries, trend analysis.`,
   })
 
   return object

@@ -5,10 +5,10 @@ import { Search, X } from "lucide-react"
 
 interface AdvancedSearchProps {
   events: any[]
-  onSearchResults: (results: any[]) => void
+  onFilteredResults: (results: any[]) => void
 }
 
-export function AdvancedSearch({ events, onSearchResults }: AdvancedSearchProps) {
+export function AdvancedSearch({ events, onFilteredResults }: AdvancedSearchProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
 
@@ -30,7 +30,7 @@ export function AdvancedSearch({ events, onSearchResults }: AdvancedSearchProps)
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     if (query.length < 2) {
-      onSearchResults(events)
+      onFilteredResults(events)
       return
     }
 
@@ -45,7 +45,7 @@ export function AdvancedSearch({ events, onSearchResults }: AdvancedSearchProps)
       )
     })
 
-    onSearchResults(filtered)
+    onFilteredResults(filtered)
   }
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -56,7 +56,7 @@ export function AdvancedSearch({ events, onSearchResults }: AdvancedSearchProps)
 
   const handleClear = () => {
     setSearchQuery("")
-    onSearchResults(events)
+    onFilteredResults(events)
     setShowSuggestions(false)
   }
 

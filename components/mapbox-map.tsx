@@ -131,7 +131,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             "Grade 1": "#ffcc00",
             Ungraded: "#a0a0b0",
           }
-          el.style.backgroundColor = gradeColors[event.grade] || "#a0a0b0"
+          el.style.backgroundColor = gradeColors[event.grade] || "#ffffffff"
 
           const marker = new mapboxgl.Marker(el).setLngLat([event.lon, event.lat]).addTo(map.current)
 
@@ -197,10 +197,10 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         }
 
         const gradeColors: Record<string, string> = {
-          "Grade 3": "#ff3355",
+          "Grade 3": "#ee052cff",
           "Grade 2": "#ff9933",
           "Grade 1": "#ffcc00",
-          Ungraded: "#a0a0b0",
+          Ungraded: "#1dafa8ff",
         }
 
         selectedPopupRef.current = new mapboxgl.Popup({

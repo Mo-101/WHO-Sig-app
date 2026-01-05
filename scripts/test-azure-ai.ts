@@ -31,21 +31,20 @@ async function testAzureOpenAI() {
     const azure = createAzure({
       resourceName: "afro-ai-resource",
       apiKey: apiKey,
-      baseURL: "https://afro-ai-resource.openai.azure.com/openai/deployments/gpt-4o",
     })
 
-    const gpt4o = azure("gpt-4o")
+    const gpt4o = azure("AFRO-AI")
 
     console.log("\n🚀 Sending test request to Azure OpenAI...")
     console.log("Resource: afro-ai-resource")
-    console.log("Deployment: gpt-4o")
+    console.log("Deployment: AFRO-AI")
     console.log("Endpoint: https://afro-ai-resource.openai.azure.com/\n")
 
     // Test with a simple WHO-related query
     const { text, usage } = await generateText({
       model: gpt4o,
       prompt: "What are the WHO grading levels for disease outbreaks? Provide a brief summary.",
-      maxTokens: 200,
+      maxRetries: 3,
     })
 
     console.log("✅ SUCCESS! Azure OpenAI is working correctly.\n")
@@ -55,9 +54,10 @@ async function testAzureOpenAI() {
     console.log("─".repeat(80))
 
     console.log("\n📊 Token Usage:")
-    console.log(`   Prompt tokens: ${usage?.promptTokens || 0}`)
-    console.log(`   Completion tokens: ${usage?.completionTokens || 0}`)
-    console.log(`   Total tokens: ${usage?.totalTokens || 0}`)
+    console.log(`   Usage data available: ${usage ? 'Yes' : 'No'}`)
+    if (usage) {
+      console.log(`   Usage details: ${JSON.stringify(usage, null, 2)}`)
+    }
 
     console.log("\n✅ All tests passed! Your Azure OpenAI setup is correct.")
     console.log("   You can now use AI features in the WHO Signal Intelligence Dashboard.\n")

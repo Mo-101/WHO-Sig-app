@@ -325,7 +325,7 @@ export default function DarkThemePage() {
   }
 
   return (
-    <div className="h-screen bg-[#0f1419] font-sans overflow-hidden">
+    <div className="h-screen bg-[#1e293b] font-sans overflow-hidden">
       {alerts.map((alert) => (
         <AIAlertPopup
           key={alert.id}
@@ -347,7 +347,7 @@ export default function DarkThemePage() {
         />
       )}
 
-      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-y-auto z-20 border border-white/10 custom-scrollbar-dark">
+      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] dark-neu-card p-4 overflow-y-auto z-20 custom-scrollbar-dark">
         <div className="mb-4">
           <AdvancedSearch events={safeWhoEvents} onSearchResults={setSearchFilteredEvents} isDark={true} />
         </div>
@@ -511,7 +511,7 @@ export default function DarkThemePage() {
       </aside>
 
       <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
-        <header className="dark-glass rounded-2xl shadow-2xl p-3 mb-3 flex items-center justify-between border border-white/10">
+        <header className="dark-neu-card p-3 mb-3 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-[#e2e8f0] flex items-center gap-2">
               <span className="text-xl">🌍</span> WHO Signal Intelligence Dashboard
@@ -521,7 +521,7 @@ export default function DarkThemePage() {
           <div className="flex items-center gap-3">
             <Link
               href="/analytics"
-              className="bg-[#1e293b] p-2.5 rounded-xl border border-[#334155] hover:bg-[#334155] transition-all"
+              className="dark-neu-btn-round p-2.5"
               title="View Analytics"
             >
               <BarChart3 className="w-5 h-5 text-[#3b82f6]" />
@@ -597,7 +597,7 @@ export default function DarkThemePage() {
         </div>
 
         <div
-          className="dark-glass rounded-2xl shadow-2xl border border-white/10 overflow-hidden relative"
+          className="dark-neu-card overflow-hidden relative"
           style={{ height: "calc(100vh - 250px)" }}
         >
           <MapboxMap

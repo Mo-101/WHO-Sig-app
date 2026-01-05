@@ -1,10 +1,56 @@
 import { neon } from "@neondatabase/serverless"
 
-// This driver works over HTTP/WebSockets and is compatible with serverless environments
-// It can connect to any PostgreSQL database, not just Neon
-const sql = neon(process.env.DATABASE_URL!)
+type NeonClient = ReturnType<typeof neon>
+
+let sqlClient: NeonClient | null = null
+let loggedMissingEnv = false
+
+function resolveConnectionString() {
+  const directUrl = process.env.DATABASE_URL
+  if (directUrl?.trim()) return directUrl
+
+  const host = process.env.POSTGRES_HOST
+  const port = process.env.POSTGRES_PORT || "5432"
+  const database = process.env.POSTGRES_DATABASE
+  const user = process.env.POSTGRES_USER
+  const password = process.env.POSTGRES_PASSWORD
+  const sslMode = process.env.POSTGRES_SSLMODE || "require"
+
+  if (host && database && user && password) {
+    const encodedUser = encodeURIComponent(user)
+    const encodedPassword = encodeURIComponent(password)
+    return `postgresql://${encodedUser}:${encodedPassword}@${host}:${port}/${database}?sslmode=${sslMode}`
+  }
+
+  return null
+}
+
+function getSqlClient() {
+  if (sqlClient) return sqlClient
+
+  const connectionString = resolveConnectionString()
+
+  if (!connectionString) {
+    if (!loggedMissingEnv) {
+      console.warn(
+        "[v0] DATABASE_URL/POSTGRES_* env vars are not set. Database features are disabled—configure them to enable Neon/Azure PostgreSQL access.",
+      )
+      loggedMissingEnv = true
+    }
+    return null
+  }
+
+  sqlClient = neon(connectionString)
+  return sqlClient
+}
 
 export async function initializeDatabase() {
+  const sql = getSqlClient()
+  if (!sql) {
+    console.warn("[v0] Skipping database initialization because DATABASE_URL is missing.")
+    return
+  }
+
   try {
     console.log("[v0] Initializing Azure PostgreSQL database...")
 
@@ -56,6 +102,12 @@ export async function initializeDatabase() {
 }
 
 export async function saveWHOEvents(events: any[]) {
+  const sql = getSqlClient()
+  if (!sql) {
+    console.warn("[v0] DATABASE_URL missing—skipping saveWHOEvents and relying on in-memory/static data.")
+    return false
+  }
+
   try {
     await sql`DELETE FROM who_events`
 
@@ -125,8 +177,14 @@ export async function saveWHOEvents(events: any[]) {
 }
 
 export async function getWHOEventsFromDB() {
+  const sql = getSqlClient()
+  if (!sql) {
+    console.warn("[v0] DATABASE_URL missing—returning empty WHO events result.")
+    return []
+  }
+
   try {
-    const result = await sql`
+    const result = (await sql`
       SELECT 
         event_id as id,
         country,
@@ -144,7 +202,7 @@ export async function getWHOEventsFromDB() {
         protracted
       FROM who_events
       ORDER BY report_date DESC
-    `
+    `) as Record<string, any>[]
 
     console.log(`[v0] Retrieved ${result.length} events from Azure PostgreSQL`)
     return result
@@ -155,12 +213,18 @@ export async function getWHOEventsFromDB() {
 }
 
 export async function getLastSyncMetadata() {
+  const sql = getSqlClient()
+  if (!sql) {
+    console.warn("[v0] DATABASE_URL missing—no sync metadata available.")
+    return null
+  }
+
   try {
-    const result = await sql`
+    const result = (await sql`
       SELECT * FROM data_sync_metadata
       ORDER BY created_at DESC
       LIMIT 1
-    `
+    `) as Record<string, any>[]
 
     return result[0] || null
   } catch (error) {

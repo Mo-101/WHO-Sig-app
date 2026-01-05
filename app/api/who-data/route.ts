@@ -22,6 +22,311 @@ interface WHOEvent {
   protracted?: string
 }
 
+const PHE_SHEET_NAME = "PHE 20251023"
+const SIGNAL_SHEET_NAME = "Signal Verification Sheet"
+const RRA_SHEET_NAME = "RRA"
+const EIS_SHEET_NAME = "EIS"
+const GIS_SHEET_NAME = "GIS_AdminLevels"
+
+type CountryLookup = Record<
+  string,
+  {
+    name: string
+    region?: string
+    lat?: number
+    lon?: number
+  }
+>
+
+function buildCountryLookup(workbook: XLSX.WorkBook): CountryLookup {
+  const lookup: CountryLookup = {}
+  const gisSheet = workbook.Sheets[GIS_SHEET_NAME]
+
+  if (!gisSheet) {
+    console.warn(`[v0] GIS sheet "${GIS_SHEET_NAME}" not found. Country lookup will be limited.`)
+    return lookup
+  }
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(gisSheet, {
+    range: 1, // skip header row 0
+    defval: "",
+    raw: false,
+  })
+
+  rows.forEach((row) => {
+    const iso3 = normalizeIso3(row["ISO_3_CODE"] || row["ISO_3_CODE_1"])
+    if (!iso3) return
+
+    if (!lookup[iso3]) {
+      lookup[iso3] = {
+        name: (row["ADM0_NAME"] || row["ADM0_NAME_1"] || "").toString() || iso3,
+        region: (row["WHO_REGION"] || row["WHO_REGION_1"] || row["UNICEF_REG"])?.toString(),
+        lat: parseNumber(row["CENTER_LAT"]),
+        lon: parseNumber(row["CENTER_LON"]),
+      }
+    }
+  })
+
+  return lookup
+}
+
+function parsePheSheet(sheet: XLSX.WorkSheet | undefined, lookup: CountryLookup): WHOEvent[] {
+  if (!sheet) {
+    console.warn(`[v0] Sheet "${PHE_SHEET_NAME}" missing`)
+    return []
+  }
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "", raw: false })
+  const events: WHOEvent[] = []
+
+  rows.forEach((row, index) => {
+    const iso3 =
+      normalizeIso3(row["ISO-Alpha-3"] || row["ISO Code"] || row["ISO3"]) || normalizeIso3(row.Country) || null
+    if (!iso3) return
+
+    const countryMeta = lookup[iso3]
+    const coordinates = determineCoordinates(row, countryMeta)
+    const reportDate =
+      parseDate(row["Date of onset"]) ||
+      parseDate(row["Date detected by MoH"]) ||
+      parseDate(row["Date notified to WCO"]) ||
+      parseDate(row["Date notified to AFRO"]) ||
+      parseDate(row["EMS Create Date"]) ||
+      new Date().toISOString()
+
+    events.push({
+      id: `PHE-${row["EMS No"] || index}`,
+      country: (row.Country || countryMeta?.name || "").toString(),
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+      disease: (row.Event || "Unknown").toString(),
+      grade: normalizeGrade(row.Grade),
+      eventType: "PHE",
+      status: normalizeStatus(row.Status),
+      description: [row["Short comments"], row["Event notes"]].filter(Boolean).join(" | ") || "",
+      year: new Date(reportDate).getFullYear(),
+      reportDate,
+      cases: parseIntSafe(row["Total cases"]),
+      deaths: parseIntSafe(row.Deaths),
+      protracted: undefined,
+    })
+  })
+
+  return events
+}
+
+function parseSignalSheet(sheet: XLSX.WorkSheet | undefined, lookup: CountryLookup): WHOEvent[] {
+  if (!sheet) {
+    console.warn(`[v0] Sheet "${SIGNAL_SHEET_NAME}" missing`)
+    return []
+  }
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "", raw: false })
+  const events: WHOEvent[] = []
+
+  rows.forEach((row, index) => {
+    const iso3 = normalizeIso3(row["Country ISO3 Code"] || row.Country)
+    if (!iso3) return
+
+    const countryMeta = lookup[iso3]
+    const coordinates = determineCoordinates(row, countryMeta)
+    const reportDate =
+      parseDate(row["Date of signal publication"]) ||
+      parseDate(row["Date of detection"]) ||
+      parseDate(row["Date verification request to the country"]) ||
+      new Date().toISOString()
+
+    events.push({
+      id: `SIG-${index + 1}`,
+      country: (row.Country || countryMeta?.name || "").toString(),
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+      disease: (row.Signal_name_recoded || row.Signal || "Signal").toString(),
+      grade: normalizeSignalGrade(row),
+      eventType: "Signal",
+      status: row["EMS created"]?.toString().toLowerCase() === "yes" ? "Ongoing" : "New",
+      description: [row.Observation, row.Comments, row.Source].filter(Boolean).join(" | ") || "",
+      year: new Date(reportDate).getFullYear(),
+      reportDate,
+      cases: parseIntSafe(row.Case),
+      deaths: parseIntSafe(row.Death),
+      protracted: undefined,
+    })
+  })
+
+  return events
+}
+
+function parseRraSheet(sheet: XLSX.WorkSheet | undefined, lookup: CountryLookup): WHOEvent[] {
+  if (!sheet) {
+    console.warn(`[v0] Sheet "${RRA_SHEET_NAME}" missing`)
+    return []
+  }
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "", raw: false })
+  const events: WHOEvent[] = []
+
+  rows.forEach((row, index) => {
+    const primaryCountry = row.Country?.toString().split(",")[0]?.trim()
+    const iso3 =
+      normalizeIso3(row["ISO_3_CODE"]) || normalizeIso3(primaryCountry || "") || normalizeIso3(row.Country)
+    if (!iso3) return
+
+    const countryMeta = lookup[iso3]
+    const coordinates = determineCoordinates(row, countryMeta)
+    const reportDate =
+      parseDate(row.DecisionDate) || parseDate(row.EventCreated) || parseDate(row.FinalizedDate) || new Date().toISOString()
+
+    events.push({
+      id: `RRA-${row["Event ID"] || index}`,
+      country: primaryCountry || countryMeta?.name || "Unknown",
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+      disease: (row["DiseaseCondition"] || row.Title || "Rapid Risk Assessment").toString(),
+      grade: normalizeRiskLevel(row.NationalRiskLevel, row.RegionalRiskLevel),
+      eventType: "RRA",
+      status: row.NeedsGrading?.toString().toLowerCase() === "yes" ? "Monitoring" : "Ongoing",
+      description: [row.Hazard, row.Syndrome, row.Aetiology].filter(Boolean).join(" | ") || "",
+      year: new Date(reportDate).getFullYear(),
+      reportDate,
+      cases: 0,
+      deaths: 0,
+      protracted: undefined,
+    })
+  })
+
+  return events
+}
+
+function parseEisSheet(sheet: XLSX.WorkSheet | undefined, lookup: CountryLookup): WHOEvent[] {
+  if (!sheet) {
+    console.warn(`[v0] Sheet "${EIS_SHEET_NAME}" missing`)
+    return []
+  }
+
+  const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: "", raw: false })
+  const events: WHOEvent[] = []
+
+  rows.forEach((row, index) => {
+    const iso3 = normalizeIso3(row.Country)
+    if (!iso3) return
+
+    const countryMeta = lookup[iso3]
+    const coordinates = determineCoordinates(row, countryMeta)
+    const reportDate =
+      parseDate(row["Date published "]) ||
+      parseDate(row["Date of EIS initiation"]) ||
+      parseDate(row["Date finalised "]) ||
+      new Date().toISOString()
+
+    events.push({
+      id: `EIS-${index + 1}`,
+      country: (row.Country || countryMeta?.name || "").toString(),
+      lat: coordinates.lat,
+      lon: coordinates.lon,
+      disease: (row.Events || "EIS Alert").toString(),
+      grade: "Ungraded",
+      eventType: "EIS",
+      status: "Monitoring",
+      description: row.Comments?.toString() || "",
+      year: new Date(reportDate).getFullYear(),
+      reportDate,
+      cases: 0,
+      deaths: 0,
+      protracted: undefined,
+    })
+  })
+
+  return events
+}
+
+function determineCoordinates(row: Record<string, any>, meta?: CountryLookup[string]) {
+  const lat =
+    parseNumber(row.lat) ||
+    parseNumber(row.latitude) ||
+    parseNumber(row.Latitude) ||
+    meta?.lat ||
+    0
+  const lon =
+    parseNumber(row.lon) ||
+    parseNumber(row.longitude) ||
+    parseNumber(row.Longitude) ||
+    meta?.lon ||
+    0
+
+  return { lat, lon }
+}
+
+function normalizeIso3(value: any): string | null {
+  if (!value) return null
+  const iso = value.toString().trim().toUpperCase()
+  if (iso.length === 3) return iso
+  return null
+}
+
+function normalizeGrade(value: any): string {
+  if (!value) return "Ungraded"
+  const normalized = value.toString().toLowerCase()
+  if (normalized.includes("3")) return "Grade 3"
+  if (normalized.includes("2")) return "Grade 2"
+  if (normalized.includes("1")) return "Grade 1"
+  return "Ungraded"
+}
+
+function normalizeStatus(value: any): string {
+  if (!value) return "Ongoing"
+  const normalized = value.toString().toLowerCase()
+  if (normalized.includes("closed") || normalized.includes("ended")) return "Closed"
+  if (normalized.includes("monitor") || normalized.includes("watch")) return "Monitoring"
+  return "Ongoing"
+}
+
+function normalizeSignalGrade(row: Record<string, any>): string {
+  const classification = row["Final classification"]?.toString().toLowerCase() || ""
+  const deaths = parseIntSafe(row.Death)
+  if (classification.includes("confirm") || classification.includes("true")) {
+    if (deaths >= 10) return "Grade 3"
+    if (deaths >= 3) return "Grade 2"
+    return "Grade 1"
+  }
+  return "Ungraded"
+}
+
+function normalizeRiskLevel(national?: any, regional?: any): string {
+  const ranking = (value?: any) => {
+    const text = value?.toString().toLowerCase() || ""
+    if (text.includes("high") || text.includes("very high")) return 3
+    if (text.includes("moderate") || text.includes("medium")) return 2
+    if (text.includes("low")) return 1
+    return 0
+  }
+
+  const score = Math.max(ranking(national), ranking(regional))
+  if (score === 3) return "Grade 3"
+  if (score === 2) return "Grade 2"
+  if (score === 1) return "Grade 1"
+  return "Ungraded"
+}
+
+function parseIntSafe(value: any): number {
+  if (!value) return 0
+  const number = Number.parseInt(value.toString().replace(/[^0-9.-]/g, ""), 10)
+  return Number.isFinite(number) ? number : 0
+}
+
+function parseNumber(value: any): number | undefined {
+  if (value === undefined || value === null || value === "") return undefined
+  const num = Number(value)
+  return Number.isFinite(num) ? num : undefined
+}
+
+function parseDate(value: any): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toISOString()
+}
+
 let dbInitialized = false
 
 export async function GET() {
@@ -129,168 +434,27 @@ export async function GET() {
     const workbook = XLSX.read(arrayBuffer, { type: "array" })
     console.log(`[v0] Workbook sheets: ${workbook.SheetNames.join(", ")}`)
 
+    const countryLookup = buildCountryLookup(workbook)
+    console.log(`[v0] Loaded ${Object.keys(countryLookup).length} ISO3 country entries from GIS_AdminLevels`)
+
     const allEvents: WHOEvent[] = []
-    let eventIdCounter = 1
 
-    for (const sheetName of workbook.SheetNames) {
-      const sheet = workbook.Sheets[sheetName]
-      const jsonData = XLSX.utils.sheet_to_json(sheet)
+    allEvents.push(...parsePheSheet(workbook.Sheets[PHE_SHEET_NAME], countryLookup))
+    allEvents.push(...parseSignalSheet(workbook.Sheets[SIGNAL_SHEET_NAME], countryLookup))
+    allEvents.push(...parseRraSheet(workbook.Sheets[RRA_SHEET_NAME], countryLookup))
+    allEvents.push(...parseEisSheet(workbook.Sheets[EIS_SHEET_NAME], countryLookup))
 
-      console.log(`[v0] Sheet "${sheetName}" has ${jsonData.length} rows`)
+    console.log(
+      `[v0] Aggregated events -> PHE:${allEvents.filter((e) => e.eventType === "PHE").length} | Signal:${
+        allEvents.filter((e) => e.eventType === "Signal").length
+      } | RRA:${allEvents.filter((e) => e.eventType === "RRA").length} | EIS:${
+        allEvents.filter((e) => e.eventType === "EIS").length
+      }`,
+    )
 
-      const sheetEvents: WHOEvent[] = jsonData
-        .map((row: any, index: number) => {
-          const id = row.id || row.ID || row.Id || `event-${eventIdCounter++}`
-          const country =
-            row.country || row.Country || row.COUNTRY || row.Country_Name || row["Country Name"] || row.Location || ""
-
-          const latitude =
-            row.latitude ||
-            row.Latitude ||
-            row.LATITUDE ||
-            row.lat ||
-            row.Lat ||
-            row.LAT ||
-            row.Latitude_Decimal ||
-            row["Latitude (Decimal)"] ||
-            0
-          const longitude =
-            row.longitude ||
-            row.Longitude ||
-            row.LONGITUDE ||
-            row.lon ||
-            row.Lon ||
-            row.LON ||
-            row.Longitude_Decimal ||
-            row["Longitude (Decimal)"] ||
-            0
-
-          const disease =
-            row.disease || row.Disease || row.DISEASE || row.Disease_Name || row["Disease Name"] || row.Pathogen || ""
-
-          let grade =
-            row.grade || row.Grade || row.GRADE || row.Grading || row["Grade Level"] || row.Risk_Level || "Ungraded"
-
-          if (grade && typeof grade === "string") {
-            if (grade.includes("3") || grade.toLowerCase().includes("three")) grade = "Grade 3"
-            else if (grade.includes("2") || grade.toLowerCase().includes("two")) grade = "Grade 2"
-            else if (grade.includes("1") || grade.toLowerCase().includes("one")) grade = "Grade 1"
-            else if (
-              grade.toLowerCase().includes("ungraded") ||
-              grade.toLowerCase().includes("pending") ||
-              grade.toLowerCase().includes("not graded")
-            )
-              grade = "Ungraded"
-          }
-
-          let eventType =
-            row.eventType ||
-            row["Event Type"] ||
-            row.EVENT_TYPE ||
-            row.Type ||
-            row.Event_Type ||
-            row.Category ||
-            "Outbreak"
-
-          const protracted =
-            row.protracted ||
-            row.Protracted ||
-            row.PROTRACTED ||
-            row.Protracted_Level ||
-            row["Protracted Level"] ||
-            row.Protracted_Type ||
-            row["Protracted Type"]
-          let protractedValue = null
-
-          if (protracted) {
-            protractedValue = protracted.toString()
-            if (protracted.toString().includes("1")) {
-              eventType = "Protracted-1"
-              protractedValue = "Protracted-1"
-            } else if (protracted.toString().includes("2")) {
-              eventType = "Protracted-2"
-              protractedValue = "Protracted-2"
-            } else if (protracted.toString().includes("3")) {
-              eventType = "Protracted-3"
-              protractedValue = "Protracted-3"
-            } else if (protracted.toString().toLowerCase().includes("protracted")) {
-              eventType = "Protracted-1"
-              protractedValue = "Protracted-1"
-            }
-          }
-
-          const status = row.status || row.Status || row.STATUS || row.Event_Status || row["Event Status"] || "Ongoing"
-          const description =
-            row.description ||
-            row.Description ||
-            row.DESCRIPTION ||
-            row.Details ||
-            row.Summary ||
-            row.Notes ||
-            `${disease} outbreak in ${country}`
-
-          const reportDate =
-            row.reportDate ||
-            row["Report Date"] ||
-            row.REPORT_DATE ||
-            row.Date ||
-            row.date ||
-            row.Report_Date ||
-            row.Date_Reported ||
-            new Date().toISOString().split("T")[0]
-
-          let year = row.year || row.Year || row.YEAR
-          if (!year && reportDate) {
-            year = new Date(reportDate).getFullYear()
-          }
-          if (!year) {
-            year = new Date().getFullYear()
-          }
-
-          const cases =
-            row.cases ||
-            row.Cases ||
-            row.CASES ||
-            row.Total_Cases ||
-            row["Total Cases"] ||
-            row.Case_Count ||
-            row.Confirmed_Cases ||
-            0
-          const deaths =
-            row.deaths ||
-            row.Deaths ||
-            row.DEATHS ||
-            row.Total_Deaths ||
-            row["Total Deaths"] ||
-            row.Death_Count ||
-            row.Fatalities ||
-            0
-
-          return {
-            id: id.toString(),
-            country: country.toString().trim(),
-            lat: Number.parseFloat(latitude.toString()) || 0,
-            lon: Number.parseFloat(longitude.toString()) || 0,
-            disease: disease.toString().trim(),
-            grade: grade.toString(),
-            eventType: eventType.toString(),
-            status: status.toString(),
-            description: description.toString().trim(),
-            year: Number.parseInt(year.toString()) || new Date().getFullYear(),
-            reportDate: reportDate.toString(),
-            cases: Number.parseInt(cases.toString()) || 0,
-            deaths: Number.parseInt(deaths.toString()) || 0,
-            protracted: protractedValue,
-          }
-        })
-        .filter((event) => {
-          return event.country && event.disease && event.country !== "" && event.disease !== ""
-        })
-
-      allEvents.push(...sheetEvents)
+    if (allEvents.length === 0) {
+      throw new Error("No events could be parsed from the configured sheets.")
     }
-
-    console.log(`[v0] Successfully parsed ${allEvents.length} total events from all sheets`)
 
     try {
       await saveWHOEvents(allEvents)

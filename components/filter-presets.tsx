@@ -86,18 +86,18 @@ export function FilterPresets({ currentFilters, onApplyPreset }: FilterPresetsPr
       </div>
 
       {showSaveDialog && (
-        <div className="mb-2 p-2 bg-white/40 rounded-lg">
+        <div className="mb-2 p-3 bg-white/60 rounded-xl neu-shadow-sm">
           <input
             type="text"
             value={presetName}
             onChange={(e) => setPresetName(e.target.value)}
             placeholder="Preset name..."
-            className="w-full px-2 py-1 rounded text-xs bg-[#e8eef5] neu-shadow-inset-sm border-none focus:outline-none focus:ring-1 focus:ring-[#009edb] mb-2"
+            className="w-full px-3 py-2 rounded-lg text-xs bg-[#e8eef5] neu-shadow-inset-sm border-none focus:outline-none focus:ring-1 focus:ring-[#009edb] mb-2"
           />
           <div className="flex gap-2">
             <button
               onClick={savePreset}
-              className="flex-1 px-2 py-1 text-[10px] bg-[#009edb] text-white rounded hover:bg-[#0056b3] transition-colors"
+              className="sidebar-pill sidebar-pill--full justify-center !bg-[#1010ee] text-white text-[11px] hover:translate-y-[-1px]"
             >
               Save
             </button>
@@ -106,7 +106,7 @@ export function FilterPresets({ currentFilters, onApplyPreset }: FilterPresetsPr
                 setShowSaveDialog(false)
                 setPresetName("")
               }}
-              className="flex-1 px-2 py-1 text-[10px] bg-[#e8eef5] text-[#6a7a94] rounded hover:bg-[#d1d9e6] transition-colors"
+              className="sidebar-pill sidebar-pill--full justify-center text-[11px] text-[#6a7a94]"
             >
               Cancel
             </button>
@@ -119,19 +119,16 @@ export function FilterPresets({ currentFilters, onApplyPreset }: FilterPresetsPr
           <p className="text-[10px] text-[#6a7a94] italic">No saved presets</p>
         ) : (
           presets.map((preset) => (
-            <div
-              key={preset.id}
-              className="flex items-center justify-between p-2 bg-white/40 rounded-lg hover:bg-white/60 transition-colors"
-            >
+            <div key={preset.id} className="flex items-center gap-2">
               <button
                 onClick={() => onApplyPreset(preset)}
-                className="flex-1 text-left text-xs text-[#2c3e50] font-medium hover:text-[#009edb] transition-colors"
+                className="sidebar-pill sidebar-pill--full justify-start text-xs text-[#2c3e50]"
               >
                 {preset.name}
               </button>
               <button
                 onClick={() => deletePreset(preset.id)}
-                className="text-[#ff3355] hover:text-[#ff0033] transition-colors"
+                className="sidebar-pill p-2 text-[#ff3355] hover:text-[#ff0033]"
                 title="Delete preset"
               >
                 <Trash2 className="w-3 h-3" />
