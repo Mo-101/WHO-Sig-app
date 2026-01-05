@@ -9,7 +9,7 @@ import { WHO_SYSTEM_PROMPT, WHO_ANALYSIS_FRAMEWORK } from "./ai-training-prompts
 const azure = createAzure({
   resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
-  apiVersion: "2023-12-01-preview", // Stable version compatible with AI SDK 5 spec v2
+  apiVersion: "2023-05-15", // Oldest stable GA version compatible with AI SDK 5 spec v2
 })
 
 const afroAI = azure("AFRO-AI")
