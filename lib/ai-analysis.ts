@@ -3,13 +3,13 @@
 import { generateObject, generateText } from "ai"
 import { createAzure } from "@ai-sdk/azure"
 import { z } from "zod"
-import { WHO_DATA_SOURCES } from "./data-sources"
-import { getEnhancedSystemPrompt, getDataSourcesContext } from "./ai-knowledge-base"
-import { WHO_SYSTEM_PROMPT, WHO_TRAINING_EXAMPLES, WHO_ANALYSIS_FRAMEWORK } from "./ai-training-prompts"
+import type { WHO_DATA_SOURCES } from "./data-sources"
+import { WHO_SYSTEM_PROMPT, WHO_ANALYSIS_FRAMEWORK } from "./ai-training-prompts"
 
 const azure = createAzure({
   resourceName: "afro-ai-resource",
   apiKey: process.env.AZURE_OPENAI_API_KEY || "",
+  apiVersion: "2023-12-01-preview", // Stable version compatible with AI SDK 5 spec v2
 })
 
 const afroAI = azure("AFRO-AI")

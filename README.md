@@ -58,14 +58,14 @@ See **[ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md)** for detailed configuratio
 ## Architecture
 
 ### Data Flow
-```
+\`\`\`
 Google Sheets XLSX → API Route → PostgreSQL Cache → SWR Hook → UI Components
-```
+\`\`\`
 
 ### AI Analysis
-```
+\`\`\`
 Outbreak Data → Azure OpenAI (AFRO-AI) → Risk Assessment → Alert Generation
-```
+\`\`\`
 
 ### Tech Stack
 - **Framework**: Next.js 16 with App Router

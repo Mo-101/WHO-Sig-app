@@ -12,9 +12,9 @@ The app uses Azure OpenAI fine-tuned GPT-4o-mini for AI-powered outbreak analysi
 - `AZURE_OPENAI_API_KEY` - Your Azure OpenAI API key
 
 **Configuration:**
-```bash
+\`\`\`bash
 AZURE_OPENAI_API_KEY=your_actual_api_key_here
-```
+\`\`\`
 
 **Azure OpenAI Deployment Details:**
 - **Resource Name**: `afro-ai-resource`
@@ -35,7 +35,7 @@ AZURE_OPENAI_API_KEY=your_actual_api_key_here
 
 **Using the API:**
 The application automatically uses the AI SDK with Azure provider:
-```typescript
+\`\`\`typescript
 import { createAzure } from "@ai-sdk/azure"
 
 const azure = createAzure({
@@ -44,7 +44,7 @@ const azure = createAzure({
 })
 
 const afroAI = azure("AFRO-AI")
-```
+\`\`\`
 
 ### 2. WHO Data Source
 
@@ -54,9 +54,9 @@ The dashboard fetches outbreak data from WHO AFRO emergency data portal.
 - `NEXT_PUBLIC_WHO_DATA_URL` - URL to the WHO xlsx data file
 
 **Configuration:**
-```bash
+\`\`\`bash
 NEXT_PUBLIC_WHO_DATA_URL=https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA
-```
+\`\`\`
 
 **Note:** 
 - The `NEXT_PUBLIC_` prefix makes this variable accessible on the client side.
@@ -75,13 +75,13 @@ The dashboard uses Azure PostgreSQL to cache WHO outbreak data for better perfor
 - `POSTGRES_PASSWORD` - Database password
 
 **Configuration:**
-```bash
+\`\`\`bash
 POSTGRES_HOST=afro-server.postgres.database.azure.com
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=who_afro_db
 POSTGRES_USER=dunoamtpmx
 POSTGRES_PASSWORD=your_postgres_password_here
-```
+\`\`\`
 
 **Azure PostgreSQL Details:**
 - Resource: `afro-server`
@@ -114,10 +114,10 @@ For map visualization of outbreak locations.
 - `MAPBOX_ACCESS_TOKEN` - Same token (for server-side usage)
 
 **Configuration:**
-```bash
+\`\`\`bash
 NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...your_token_here
 MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
-```
+\`\`\`
 
 **How to get Mapbox token:**
 1. Go to [Mapbox Account](https://account.mapbox.com/)
@@ -139,26 +139,26 @@ MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
 #### For Development (Local)
 
 1. Copy the example environment file:
-   ```bash
+   \`\`\`bash
    cp .env.local.example .env.local
-   ```
+   \`\`\`
 
 2. Edit `.env.local` and add your actual values:
-   ```bash
+   \`\`\`bash
    nano .env.local
    # or
    code .env.local
-   ```
+   \`\`\`
 
 3. Install dependencies:
-   ```bash
+   \`\`\`bash
    npm install
-   ```
+   \`\`\`
 
 4. Run the development server:
-   ```bash
+   \`\`\`bash
    npm run dev
-   ```
+   \`\`\`
 
 5. Open [http://localhost:3000](http://localhost:3000)
 
@@ -266,7 +266,7 @@ The AI system monitors these WHO AFRO data sources:
 ### 10. Data Flow Architecture
 
 **Data Fetching Flow:**
-```
+\`\`\`
 Google Sheets XLSX URL
     ↓ (Every 5 minutes)
 Next.js API Route (/api/who-data)
@@ -276,7 +276,7 @@ PostgreSQL Database (afro-server)
 Frontend (SWR hook)
     ↓
 UI Components (Maps, Charts, Lists)
-```
+\`\`\`
 
 **Fallback Strategy:**
 1. Try fetching from Google Sheets

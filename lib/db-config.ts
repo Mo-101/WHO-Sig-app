@@ -40,7 +40,13 @@ function getSqlClient() {
     return null
   }
 
-  sqlClient = neon(connectionString)
+  sqlClient = neon(connectionString, {
+    fullResults: true,
+    arrayMode: false,
+    fetchOptions: {
+      cache: "no-store",
+    },
+  })
   return sqlClient
 }
 

@@ -4,15 +4,15 @@
 
 ### Step 1: Install Dependencies
 
-```bash
+\`\`\`bash
 npm install
-```
+\`\`\`
 
 ### Step 2: Configure Environment Variables
 
 Create `.env.local` file:
 
-```bash
+\`\`\`bash
 # Azure OpenAI (for AI-powered outbreak analysis)
 AZURE_OPENAI_API_KEY=your_azure_key_here
 
@@ -29,7 +29,7 @@ POSTGRES_PASSWORD=your_postgres_password_here
 # Mapbox (for interactive maps)
 NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_mapbox_token_here
 MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
-```
+\`\`\`
 
 **Get Your Keys:**
 - **Azure OpenAI**: [Azure Portal](https://portal.azure.com) → afro-ai-resource → Keys and Endpoint → Copy Key 1
@@ -46,23 +46,23 @@ The PostgreSQL database will automatically:
 
 ### Step 4: Test Azure OpenAI
 
-```bash
+\`\`\`bash
 # Test Azure OpenAI connection (optional)
 npm run test:azure
-```
+\`\`\`
 
 Expected output:
-```
+\`\`\`
 ✅ Azure OpenAI configured correctly
 ✅ Connected to AFRO-AI deployment
 ✅ Model: gpt-4o-mini-2024-07-18 (fine-tuned)
-```
+\`\`\`
 
 ### Step 5: Run the Application
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 Open [http://localhost:3000](http://localhost:3000)
 
@@ -110,11 +110,11 @@ The dashboard uses **Azure OpenAI AFRO-AI** deployment (fine-tuned GPT-4o-mini) 
 ### 1. Check Browser Console (F12)
 
 Look for:
-```
+\`\`\`
 ✅ [v0] API response: { success: true, data: [...], source: "database" }
 ✅ [v0] Running AI analysis on 20 events
 ✅ [v0] AI Analysis complete: { analysis: {...}, anomalies: {...} }
-```
+\`\`\`
 
 ### 2. Check the Dashboard
 

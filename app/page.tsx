@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect, JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal } from "react"
+import { useState, useMemo, useRef, useEffect } from "react"
 import useSWR from "swr"
 import { Checkbox } from "@/components/ui/checkbox"
 import MapboxMap from "@/components/mapbox-map"
@@ -18,7 +18,7 @@ import { EventDetailModal } from "@/components/event-detail-modal"
 import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { analyzeOutbreakData, detectAnomalies } from "@/lib/ai-analysis"
-import { WHOEvent } from "@/lib/who-data"
+import type { WHOEvent } from "@/lib/who-data"
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -68,8 +68,6 @@ export default function DashboardPage() {
     return []
   }, [apiResponse])
 
-  console.log("[v0] whoEvents array length:", whoEvents.length)
-
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
@@ -86,22 +84,22 @@ export default function DashboardPage() {
   const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
-  const uniqueCountries: string[] = useMemo(
-    () => {
-      // Remove falsy, trim, and deduplicate
-      const seen = new Set<string>();
-      interface EventCountry {
-        country: string | null | undefined;
-      }
+  const uniqueCountries: string[] = useMemo(() => {
+    // Remove falsy, trim, and deduplicate
+    const seen = new Set<string>()
+    interface EventCountry {
+      country: string | null | undefined
+    }
 
-      return (whoEvents || [])
-        .map((e: EventCountry) => String(e.country).trim())
-        .filter((c: string) => c && !seen.has(c) && seen.add(c))
-        .sort();
-    },
+    return (whoEvents || [])
+      .map((e: EventCountry) => String(e.country).trim())
+      .filter((c: string) => c && !seen.has(c) && seen.add(c))
+      .sort()
+  }, [whoEvents])
+  const uniqueDiseases = useMemo(
+    () => Array.from(new Set((whoEvents || []).map((e: { disease: any }) => e.disease))).sort(),
     [whoEvents],
   )
-  const uniqueDiseases = useMemo(() => Array.from(new Set((whoEvents || []).map((e: { disease: any }) => e.disease))).sort(), [whoEvents])
   const uniqueYears = useMemo(
     () => (Array.from(new Set((whoEvents || []).map((e: { year: any }) => e.year))) as number[]).sort((a, b) => b - a),
     [whoEvents],
@@ -110,20 +108,29 @@ export default function DashboardPage() {
   const filteredEvents = useMemo(() => {
     if (!whoEvents) return []
 
-    let events = whoEvents.filter((event: { grade: string; country: string; disease: string; eventType: string; year: number; reportDate: string | number | Date }) => {
-      const gradeMatch = selectedGrades.length === 0 || selectedGrades.includes(event.grade)
-      const countryMatch = selectedCountries.length === 0 || selectedCountries.includes(event.country)
-      const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.includes(event.disease)
-      const eventTypeMatch = selectedEventTypes.length === 0 || selectedEventTypes.includes(event.eventType)
-      const yearMatch = event.year === selectedYear
+    let events = whoEvents.filter(
+      (event: {
+        grade: string
+        country: string
+        disease: string
+        eventType: string
+        year: number
+        reportDate: string | number | Date
+      }) => {
+        const gradeMatch = selectedGrades.length === 0 || selectedGrades.includes(event.grade)
+        const countryMatch = selectedCountries.length === 0 || selectedCountries.includes(event.country)
+        const diseaseMatch = selectedDiseases.length === 0 || selectedDiseases.includes(event.disease)
+        const eventTypeMatch = selectedEventTypes.length === 0 || selectedEventTypes.includes(event.eventType)
+        const yearMatch = event.year === selectedYear
 
-      const eventDate = new Date(event.reportDate)
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      const dateMatch = eventDate >= start && eventDate <= end
+        const eventDate = new Date(event.reportDate)
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const dateMatch = eventDate >= start && eventDate <= end
 
-      return gradeMatch && countryMatch && diseaseMatch && eventTypeMatch && yearMatch && dateMatch
-    })
+        return gradeMatch && countryMatch && diseaseMatch && eventTypeMatch && yearMatch && dateMatch
+      },
+    )
 
     if (searchFilteredEvents.length > 0) {
       const searchIds = new Set(searchFilteredEvents.map((e) => e.id))
@@ -143,7 +150,6 @@ export default function DashboardPage() {
     searchFilteredEvents,
   ])
 
-
   const gradeSummary = useMemo(() => {
     if (!whoEvents) return { g3: 0, g2: 0, g1: 0, gu: 0 }
     const g3 = whoEvents.filter((e: { grade: string }) => e.grade === "Grade 3").length
@@ -157,9 +163,15 @@ export default function DashboardPage() {
   const ongoingCount = filteredEvents.filter((e: { status: string }) => e.status === "Ongoing").length
   const outbreakCount = filteredEvents.filter((e: { eventType: string }) => e.eventType === "Outbreak").length
 
-  const protracted1Count = (whoEvents || []).filter((e: { eventType: string | string[] }) => e.eventType.includes("Protracted-1")).length
-  const protracted2Count = (whoEvents || []).filter((e: { eventType: string | string[] }) => e.eventType.includes("Protracted-2")).length
-  const protracted3Count = (whoEvents || []).filter((e: { eventType: string | string[] }) => e.eventType.includes("Protracted-3")).length
+  const protracted1Count = (whoEvents || []).filter((e: { eventType: string | string[] }) =>
+    e.eventType.includes("Protracted-1"),
+  ).length
+  const protracted2Count = (whoEvents || []).filter((e: { eventType: string | string[] }) =>
+    e.eventType.includes("Protracted-2"),
+  ).length
+  const protracted3Count = (whoEvents || []).filter((e: { eventType: string | string[] }) =>
+    e.eventType.includes("Protracted-3"),
+  ).length
 
   const toggleFilter = (value: string, selectedValues: string[], setSelectedValues: (values: string[]) => void) => {
     setSelectedValues(
@@ -167,13 +179,22 @@ export default function DashboardPage() {
     )
   }
 
-
-
+  useEffect(() => {
+    if (whoEvents) {
+      console.log("[v0] whoEvents array length:", whoEvents.length)
+      console.log("[v0] Sample event data:", whoEvents[0])
+      console.log("[v0] Grade summary:", {
+        g3: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 3").length,
+        g2: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 2").length,
+        g1: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 1").length,
+        gu: whoEvents.filter((e: { grade: string }) => e.grade === "Ungraded").length,
+      })
+    }
+  }, [whoEvents])
 
   const handleEventClick = (event: any) => {
     setSelectedEventForModal(event)
   }
-
 
   const tickerEvents = useMemo(() => {
     return filteredEvents.slice(0, 8).map((event: { country: any; disease: any; grade: any }) => ({
@@ -184,13 +205,12 @@ export default function DashboardPage() {
   }, [filteredEvents])
 
   const tickerText = useMemo(() => {
-    const items = tickerEvents.map((e: { country: any; disease: any; grade: any }) => `🔴 ${e.country}: ${e.disease} (${e.grade})`)
+    const items = tickerEvents.map(
+      (e: { country: any; disease: any; grade: any }) => `🔴 ${e.country}: ${e.disease} (${e.grade})`,
+    )
     const combined = items.join("  •  ")
     return `LIVE UPDATES: ${combined}  •  ${combined}`
   }, [tickerEvents])
-
-
-
 
   const handleManualRefresh = () => {
     mutate()
@@ -311,9 +331,14 @@ export default function DashboardPage() {
 
       {/* Event Detail Modal */}
       {selectedEventForModal && (
-        <EventDetailModal event={selectedEventForModal} onClose={() => setSelectedEventForModal(null)} relatedEvents={[]} onJumpToLocation={function (event: WHOEvent): void {
-          throw new Error("Function not implemented.")
-        } } />
+        <EventDetailModal
+          event={selectedEventForModal}
+          onClose={() => setSelectedEventForModal(null)}
+          relatedEvents={[]}
+          onJumpToLocation={(event: WHOEvent): void => {
+            throw new Error("Function not implemented.")
+          }}
+        />
       )}
 
       {/* Left Sidebar */}
@@ -329,13 +354,15 @@ export default function DashboardPage() {
               setSelectedCountries(preset.filters.countries || [])
               setSelectedDiseases(preset.filters.diseases || [])
               setSelectedEventTypes(preset.filters.eventTypes || [])
-            } } currentFilters={{
+            }}
+            currentFilters={{
               selectedGrades: [],
               selectedCountries: [],
               selectedDiseases: [],
               selectedEventTypes: [],
-              selectedYear: 0
-            }}          />
+              selectedYear: 0,
+            }}
+          />
 
           <AdvancedSearch events={whoEvents} onFilteredResults={setSearchFilteredEvents} />
 
@@ -393,7 +420,7 @@ export default function DashboardPage() {
             <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
               {uniqueCountries.map((country, idx) => (
                 <label
-                  key={country + '-' + idx}
+                  key={country + "-" + idx}
                   className="neu-card-sm flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:neu-elevated transition-all"
                 >
                   <Checkbox
@@ -422,7 +449,9 @@ export default function DashboardPage() {
                     onCheckedChange={() => toggleFilter(String(disease), selectedDiseases, setSelectedDiseases)}
                     className="data-[state=checked]:bg-[#1010ee] border-gray-300"
                   />
-                  <span className="text-xs text-gray-700 font-medium flex-1 text-balance leading-tight">{String(disease)}</span>
+                  <span className="text-xs text-gray-700 font-medium flex-1 text-balance leading-tight">
+                    {String(disease)}
+                  </span>
                 </label>
               ))}
             </div>
@@ -467,7 +496,7 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
-        <><header className="neu-panel p-4 mb-3 flex items-center justify-between">
+        <header className="neu-panel p-4 mb-3 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-gray-900">🌍 WHO Signal Intelligence Dashboard</h1>
             <p className="text-[11px] text-gray-600">Live tracking of graded events in the African region</p>
@@ -484,126 +513,131 @@ export default function DashboardPage() {
             <ThemeToggle />
             <span className="neu-btn-primary px-3 py-1.5 text-[10px] font-semibold">● LIVE</span>
           </div>
-        </header><div className="mb-3 ticker-wrapper">
-            <div className="ticker-content">{tickerText}</div>
-          </div><div className="grid grid-cols-7 gap-3 mb-3">
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/Total events.gif" alt="Total Events" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-[#1010ee] leading-tight mb-0.5">{filteredEvents.length}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Total Events</div>
+        </header>
+        <div className="mb-3 ticker-wrapper">
+          <div className="ticker-content">{tickerText}</div>
+        </div>
+        <div className="grid grid-cols-7 gap-3 mb-3">
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Total events.gif" alt="Total Events" className="w-full h-full object-cover rounded-full" />
             </div>
-
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/New events.gif" alt="New Events" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-green-600 leading-tight mb-0.5">{newCount}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">New Events</div>
-            </div>
-
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/ongoing.gif" alt="Ongoing" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-orange-600 leading-tight mb-0.5">{ongoingCount}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Ongoing</div>
-            </div>
-
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/outbreak.gif" alt="Outbreaks" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-red-600 leading-tight mb-0.5">{outbreakCount}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Outbreaks</div>
-            </div>
-
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/Protracted-1.gif" alt="Protracted-1" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-purple-600 leading-tight mb-0.5">{protracted1Count}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Protracted-1</div>
-            </div>
-
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/Protracted-2.gif" alt="Protracted-2" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-indigo-600 leading-tight mb-0.5">{protracted2Count}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Protracted-2</div>
-            </div>
-
-            <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
-              <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
-                <img src="/Protracted-3.gif" alt="Protracted-3" className="w-full h-full object-cover rounded-full" />
-              </div>
-              <div className="text-2xl font-bold text-pink-600 leading-tight mb-0.5">{protracted3Count}</div>
-              <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Protracted-3</div>
-            </div>
+            <div className="text-2xl font-bold text-[#1010ee] leading-tight mb-0.5">{filteredEvents.length}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Total Events</div>
           </div>
 
-          <div className="neu-panel overflow-hidden relative" style={{ height: "calc(100vh - 250px)" }}>
-            <MapboxMap
-              ref={mapRef}
-              events={filteredEvents}
-              selectedEvent={selectedMapEvent}
-              setSelectedEvent={setSelectedMapEvent} />
-          </div></>
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/New events.gif" alt="New Events" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="text-2xl font-bold text-green-600 leading-tight mb-0.5">{newCount}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">New Events</div>
+          </div>
+
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/ongoing.gif" alt="Ongoing" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="text-2xl font-bold text-orange-600 leading-tight mb-0.5">{ongoingCount}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Ongoing</div>
+          </div>
+
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/outbreak.gif" alt="Outbreaks" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="text-2xl font-bold text-red-600 leading-tight mb-0.5">{outbreakCount}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Outbreaks</div>
+          </div>
+
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-1.gif" alt="Protracted-1" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="text-2xl font-bold text-purple-600 leading-tight mb-0.5">{protracted1Count}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Protracted-1</div>
+          </div>
+
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-2.gif" alt="Protracted-2" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="text-2xl font-bold text-indigo-600 leading-tight mb-0.5">{protracted2Count}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Protracted-2</div>
+          </div>
+
+          <div className="neu-card metric-card text-center hover:neu-elevated transition-all duration-300">
+            <div className="metric-icon rounded-full neu-shadow-xs p-0.5 flex items-center justify-center overflow-hidden">
+              <img src="/Protracted-3.gif" alt="Protracted-3" className="w-full h-full object-cover rounded-full" />
+            </div>
+            <div className="text-2xl font-bold text-pink-600 leading-tight mb-0.5">{protracted3Count}</div>
+            <div className="text-[10px] text-gray-600 uppercase tracking-wide font-medium">Protracted-3</div>
+          </div>
+        </div>
+
+        <div className="neu-panel overflow-hidden relative" style={{ height: "calc(100vh - 250px)" }}>
+          <MapboxMap
+            ref={mapRef}
+            events={filteredEvents}
+            selectedEvent={selectedMapEvent}
+            setSelectedEvent={setSelectedMapEvent}
+          />
+        </div>
       </main>
 
       {/* Right Sidebar */}
       <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] neu-panel p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
-        <>
-          <h3 className="text-xs font-bold text-[#1010ee] uppercase tracking-wide mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
-            <span className="text-base">📡</span> Recent Signals
-          </h3>
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
-            {filteredEvents.slice(0, 20).map((event: any, idx: number) => (
-              <div
-                key={(event.id ? String(event.id) : 'event') + '-' + idx}
-                onClick={() => handleEventClick(event)}
-                className="neu-list-item p-3 cursor-pointer transition-all"
-              >
-                <div className="flex items-start gap-3 mb-2">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full neu-shadow-xs flex items-center justify-center p-0.5">
-                    <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
-                      <img
-                        src={`/${event.country}.png`}
-                        alt={`${event.country} flag`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none"
-                          const countryCode = event.country ? String(event.country).substring(0, 2).toUpperCase() : "NA";
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.parentElement.innerHTML =
-                              `<span class="text-[#1010ee] text-xs font-bold">${countryCode}</span>`
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-gray-900 truncate">{event.country}</span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
-                        event.grade === "Grade 3" ? "bg-red-100 text-red-700" :
-                        event.grade === "Grade 2" ? "bg-orange-100 text-orange-700" :
-                        event.grade === "Grade 1" ? "bg-yellow-100 text-yellow-700" :
-                        "bg-gray-100 text-gray-700"
-                      }`}>
-                        {event.grade}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-700 font-medium line-clamp-2 mb-1">{event.disease}</p>
-                    <p className="text-[10px] text-gray-500">{event.reportDate}</p>
+        <h3 className="text-xs font-bold text-[#1010ee] uppercase tracking-wide mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
+          <span className="text-base">📡</span> Recent Signals
+        </h3>
+        <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+          {filteredEvents.slice(0, 20).map((event: any, idx: number) => (
+            <div
+              key={(event.id ? String(event.id) : "event") + "-" + idx}
+              onClick={() => handleEventClick(event)}
+              className="neu-list-item p-3 cursor-pointer transition-all"
+            >
+              <div className="flex items-start gap-3 mb-2">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full neu-shadow-xs flex items-center justify-center p-0.5">
+                  <div className="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
+                    <img
+                      src={`/${event.country}.png`}
+                      alt={`${event.country} flag`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none"
+                        const countryCode = event.country ? String(event.country).substring(0, 2).toUpperCase() : "NA"
+                        if (e.currentTarget.parentElement) {
+                          e.currentTarget.parentElement.innerHTML = `<span class="text-[#1010ee] text-xs font-bold">${countryCode}</span>`
+                        }
+                      }}
+                    />
                   </div>
                 </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold text-gray-900 truncate">{event.country}</span>
+                    <span
+                      className={`text-[9px] px-2 py-0.5 rounded-full font-semibold ${
+                        event.grade === "Grade 3"
+                          ? "bg-red-100 text-red-700"
+                          : event.grade === "Grade 2"
+                            ? "bg-orange-100 text-orange-700"
+                            : event.grade === "Grade 1"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {event.grade}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-700 font-medium line-clamp-2 mb-1">{event.disease}</p>
+                  <p className="text-[10px] text-gray-500">{event.reportDate}</p>
+                </div>
               </div>
-            ))}
-          </div>
-        </>
+            </div>
+          ))}
+        </div>
       </aside>
     </div>
   )
