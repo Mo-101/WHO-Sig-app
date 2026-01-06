@@ -268,11 +268,11 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="h-screen bg-[#EFF2F9] flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-12 h-12 text-[#009edb] animate-spin mx-auto mb-4" />
-          <p className="text-lg font-semibold text-[#2c3e50]">Loading...</p>
-          <p className="text-sm text-[#6a7a94] mt-2">Fetching latest WHO Data outbreak information</p>
+      <div className="h-screen star-field hex-pattern flex items-center justify-center">
+        <div className="neu-card p-8 text-center">
+          <RefreshCw className="w-12 h-12 text-gradient-cyan animate-spin mx-auto mb-4" />
+          <p className="text-lg font-semibold text-gradient-flame">Loading...</p>
+          <p className="text-sm text-gray-400 mt-2">Fetching latest WHO Data outbreak information</p>
         </div>
       </div>
     )
@@ -280,16 +280,16 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="h-screen bg-[#EFF2F9] flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <AlertTriangle className="w-12 h-12 text-[#ff3355] mx-auto mb-4" />
-          <p className="text-lg font-semibold text-[#2c3e50] mb-2">Failed to Load Data</p>
-          <p className="text-sm text-[#6a7a94] mb-4">
+      <div className="h-screen star-field hex-pattern flex items-center justify-center">
+        <div className="neu-card p-8 text-center max-w-md">
+          <AlertTriangle className="w-12 h-12 text-gradient-flame mx-auto mb-4" />
+          <p className="text-lg font-semibold text-gradient-flame mb-2">Failed to Load Data</p>
+          <p className="text-sm text-gray-400 mb-4">
             {error.message || "Unable to fetch WHO data. Please try again."}
           </p>
           <button
             onClick={handleManualRefresh}
-            className="px-6 py-3 bg-[#EFF2F9] text-white font-semibold rounded-xl hover:bg-[#0056b3] transition-colors"
+            className="neu-btn px-6 py-3 text-gradient-cyan font-semibold"
           >
             Retry
           </button>
@@ -300,17 +300,17 @@ export default function DashboardPage() {
 
   if (!whoEvents || whoEvents.length === 0) {
     return (
-      <div className="h-screen bg-[#EFF2F9] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-semibold text-[#2c3e50]">No Data Available</p>
-          <p className="text-sm text-[#6a7a94] mt-2">No outbreak events found in the database</p>
+      <div className="h-screen star-field hex-pattern flex items-center justify-center">
+        <div className="neu-card p-8 text-center">
+          <p className="text-lg font-semibold text-gradient-soul">No Data Available</p>
+          <p className="text-sm text-gray-400 mt-2">No outbreak events found in database</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#EFF2F9" }}>
+    <div className="min-h-screen star-field hex-pattern">
       {/* AI Alert Popups */}
       {alerts.map((alert) => (
         <AIAlertPopup
@@ -342,7 +342,7 @@ export default function DashboardPage() {
       )}
 
       {/* Left Sidebar */}
-      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] neu-panel p-4 overflow-hidden flex flex-col z-20 custom-scrollbar">
+      <aside className="fixed left-2.5 top-2.5 bottom-2.5 w-[280px] neu-sidebar rounded-lg p-4 overflow-hidden flex flex-col z-20 custom-scrollbar">
         <h3 className="text-xs font-bold text-[#1010ee] uppercase tracking-wide mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
           <span className="text-base">🔍</span> Advanced Filters
         </h3>
@@ -498,8 +498,8 @@ export default function DashboardPage() {
       <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
         <header className="neu-panel p-4 mb-3 flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-gray-900">🌍 WHO Signal Intelligence Dashboard</h1>
-            <p className="text-[11px] text-gray-600">Live tracking of graded events in the African region</p>
+            <h1 className="text-lg font-bold text-gradient-flame">🌍 WHO Signal Intelligence Dashboard</h1>
+            <p className="text-[11px] text-gray-400">Live tracking of graded events in African region</p>
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -507,11 +507,11 @@ export default function DashboardPage() {
               className="neu-btn-round p-2.5 hover:neu-elevated transition-all"
               title="View Analytics"
             >
-              <BarChart3 className="w-5 h-5 text-[#1010ee]" />
+              <BarChart3 className="w-5 h-5 text-gradient-cyan" />
             </Link>
             <NotificationCenter events={filteredEvents} />
             <ThemeToggle />
-            <span className="neu-btn-primary px-3 py-1.5 text-[10px] font-semibold">● LIVE</span>
+            <span className="neu-btn-primary px-3 py-1.5 text-[10px] font-semibold glow-cyan">● LIVE</span>
           </div>
         </header>
         <div className="mb-3 ticker-wrapper">
@@ -575,7 +575,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="neu-panel overflow-hidden relative" style={{ height: "calc(100vh - 250px)" }}>
+        <div className="neu-panel overflow-hidden relative map-container">
           <MapboxMap
             ref={mapRef}
             events={filteredEvents}
@@ -586,7 +586,7 @@ export default function DashboardPage() {
       </main>
 
       {/* Right Sidebar */}
-      <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] neu-panel p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
+      <aside className="fixed right-[10px] top-[10px] bottom-[10px] w-[290px] neu-sidebar-right rounded-lg p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
         <h3 className="text-xs font-bold text-[#1010ee] uppercase tracking-wide mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
           <span className="text-base">📡</span> Recent Signals
         </h3>
