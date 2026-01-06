@@ -211,12 +211,10 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
         })
           .setLngLat([selectedEvent.lon, selectedEvent.lat])
           .setHTML(`
-          <div style="padding: 14px; font-family: Inter, sans-serif;">
-            <div style="display: flex; align-items-start justify-between margin-bottom: 8px;">
-              <div>
-                <div style="font-size: 14px; font-weight: 700; color: #0056b3; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">${selectedEvent.country}</div>
-                <div style="font-size: 15px; font-weight: 600; color: #2c3e50; margin-bottom: 6px;">${selectedEvent.disease}</div>
-              </div>
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 0; min-width: 280px; max-width: 320px;">
+            <div style="margin-bottom: 12px;">
+              <div style="font-size: 16px; font-weight: 700; color: #0056b3; margin-bottom: 4px;">${selectedEvent.country}</div>
+              <div style="font-size: 18px; font-weight: 800; color: #002d56; margin-bottom: 8px;">${selectedEvent.disease}</div>
               <div style="display: inline-block; font-size: 10px; padding: 5px 10px; border-radius: 8px; background: ${gradeColors[selectedEvent.grade]}22; color: ${gradeColors[selectedEvent.grade]}; font-weight: 700; border: 1.5px solid ${gradeColors[selectedEvent.grade]}44; white-space: nowrap;">${selectedEvent.grade}</div>
             </div>
             <div style="font-size: 11px; color: #6a7a94; margin-bottom: 8px; display: flex; gap: 8px;">
@@ -240,7 +238,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
               <svg style="display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: middle;" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
-              Location: ${selectedEvent.country} (${selectedEvent.lat.toFixed(4)}, ${selectedEvent.lon.toFixed(4)})
+              Location: ${selectedEvent.country} (${Number(selectedEvent.lat).toFixed(4)}, ${Number(selectedEvent.lon).toFixed(4)})
             </div>
           </div>
         `)

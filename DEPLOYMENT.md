@@ -5,29 +5,30 @@
 Set these in your Vercel/production environment:
 
 ### Database (Azure PostgreSQL)
-\`\`\`bash
+```bash
 DATABASE_URL="postgresql://avnadmin:AVNS_r3_b6ksDYyWTw54wPGf@afro-server.postgres.database.azure.com:5432/defaultdb?sslmode=require"
-\`\`\`
+```
 
 ### Data Source (Google Sheets)
-\`\`\`bash
+```bash
 NEXT_PUBLIC_WHO_DATA_URL="https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA/pub?output=xlsx"
-\`\`\`
+```
 
 ### Azure OpenAI (AI Analysis)
-\`\`\`bash
+```bash
 AZURE_OPENAI_API_KEY="your-azure-openai-key"
 AZURE_OPENAI_ENDPOINT="https://afro-ai-resource.cognitiveservices.azure.com/"
 AZURE_OPENAI_DEPLOYMENT_NAME="AFRO-AI"
-\`\`\`
+```
 
 ### Mapbox (Maps)
-\`\`\`bash
-# Get your token from: https://account.mapbox.com/access-tokens/
-# See .env.local.example for variable names
+```bash
+# Get your free token from: https://account.mapbox.com/access-tokens/
+# Configure in environment variables - see .env.local.example for details
+# Token must start with 'pk.' and be set with NEXT_PUBLIC_ prefix
 NEXT_PUBLIC_MAPBOX_TOKEN="your-mapbox-token"
 MAPBOX_ACCESS_TOKEN="your-mapbox-token"
-\`\`\`
+```
 
 ## Deployment Steps
 
@@ -58,6 +59,7 @@ MAPBOX_ACCESS_TOKEN="your-mapbox-token"
 - Get a free token from [mapbox.com](https://account.mapbox.com/access-tokens/)
 - Configure as shown in .env.local.example
 - Check token is active in Mapbox dashboard
+- Verify token has proper format (starts with 'pk.')
 
 ### AI Analysis Not Working
 - Verify AZURE_OPENAI_API_KEY is correct
@@ -66,7 +68,7 @@ MAPBOX_ACCESS_TOKEN="your-mapbox-token"
 
 ## System Architecture
 
-\`\`\`
+```
 Google Sheets (Public XLSX)
          ↓
     API Route (/api/who-data)
@@ -76,7 +78,7 @@ Google Sheets (Public XLSX)
     Frontend (Display)
          ↓
     Azure OpenAI (Analysis)
-\`\`\`
+```
 
 ## Data Flow
 1. Every 5 minutes, API checks for new data
