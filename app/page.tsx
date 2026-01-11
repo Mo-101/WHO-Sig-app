@@ -216,55 +216,54 @@ export default function DashboardPage() {
     mutate()
   }
 
-  useEffect(() => {
-    const runAIAnalysis = async () => {
-      if (whoEvents.length === 0) return
+  // useEffect(() => {
+  //   if (!whoEvents || whoEvents.length === 0) return
+  //   console.log("[v0] Running AI analysis on", whoEvents.length, "events")
+  //   runAIAnalysis()
+  // }, [whoEvents])
 
-      try {
-        console.log("[v0] Running AI analysis on", whoEvents.length, "events")
+  const runAIAnalysis = async () => {
+    if (whoEvents.length === 0) return
 
-        // Run AI analysis
-        const analysis = await analyzeOutbreakData(whoEvents)
-        const anomalies = await detectAnomalies(whoEvents)
+    try {
+      console.log("[v0] Running AI analysis on", whoEvents.length, "events")
 
-        console.log("[v0] AI Analysis complete:", { analysis, anomalies })
+      // Run AI analysis
+      const analysis = await analyzeOutbreakData(whoEvents)
+      const anomalies = await detectAnomalies(whoEvents)
 
-        // Generate alerts if needed
-        if (anomalies.anomalyDetected || analysis.alertLevel === "critical" || analysis.alertLevel === "high") {
-          const newAlert = {
-            id: crypto.randomUUID(),
-            alertLevel: analysis.alertLevel, // Use the correct property name
-            type: analysis.alertLevel === "critical" ? "critical" : "warning",
-            title: `${analysis.alertLevel.toUpperCase()} Alert: ${anomalies.anomalyDetected ? anomalies.anomalyType : "Risk Assessment"}`,
-            summary: analysis.summary,
-            keyFindings: analysis.keyFindings || [],
-            affectedCountries: analysis.affectedCountries,
-            recommendations: analysis.recommendations,
-            riskScore: analysis.riskScore,
-            trendAnalysis: analysis.trendAnalysis || "No trend data available",
-            timestamp: new Date(),
-          }
+      console.log("[v0] AI Analysis complete:", { analysis, anomalies })
 
-          setAlerts((prev) => {
-            // Avoid duplicate alerts
-            const exists = prev.some((a) => a.title === newAlert.title && Date.now() - a.timestamp.getTime() < 600000)
-            if (!exists) {
-              console.log("[v0] New alert generated:", newAlert)
-              return [newAlert, ...prev].slice(0, 5) // Keep max 5 alerts
-            }
-            return prev
-          })
+      // Generate alerts if needed
+      if (anomalies.anomalyDetected || analysis.alertLevel === "critical" || analysis.alertLevel === "high") {
+        const newAlert = {
+          id: crypto.randomUUID(),
+          alertLevel: analysis.alertLevel, // Use the correct property name
+          type: analysis.alertLevel === "critical" ? "critical" : "warning",
+          title: `${analysis.alertLevel.toUpperCase()} Alert: ${anomalies.anomalyDetected ? anomalies.anomalyType : "Risk Assessment"}`,
+          summary: analysis.summary,
+          keyFindings: analysis.keyFindings || [],
+          affectedCountries: analysis.affectedCountries,
+          recommendations: analysis.recommendations,
+          riskScore: analysis.riskScore,
+          trendAnalysis: analysis.trendAnalysis || "No trend data available",
+          timestamp: new Date(),
         }
-      } catch (error) {
-        console.error("[v0] AI analysis error:", error)
-      }
-    }
 
-    // Run analysis on load and every 5 minutes
-    runAIAnalysis()
-    const interval = setInterval(runAIAnalysis, 300000)
-    return () => clearInterval(interval)
-  }, [whoEvents])
+        setAlerts((prev) => {
+          // Avoid duplicate alerts
+          const exists = prev.some((a) => a.title === newAlert.title && Date.now() - a.timestamp.getTime() < 600000)
+          if (!exists) {
+            console.log("[v0] New alert generated:", newAlert)
+            return [newAlert, ...prev].slice(0, 5) // Keep max 5 alerts
+          }
+          return prev
+        })
+      }
+    } catch (error) {
+      console.error("[v0] AI analysis error:", error)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -495,7 +494,7 @@ export default function DashboardPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-[300px] mr-[300px] px-2.5 h-screen flex flex-col">
+      <main className="fixed left-[300px] right-[300px] top-2.5 bottom-2.5 px-2.5 flex flex-col z-10">
         <header className="neu-panel p-4 mb-3 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-gray-900">🌍 WHO Signal Intelligence Dashboard</h1>
@@ -575,7 +574,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="neu-panel overflow-hidden relative" style={{ height: "calc(100vh - 250px)" }}>
+        <div className="neu-panel overflow-hidden relative flex-1">
           <MapboxMap
             ref={mapRef}
             events={filteredEvents}

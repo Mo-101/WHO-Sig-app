@@ -140,7 +140,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
             closeButton: false,
             className: "mapbox-tooltip",
           }).setHTML(`
-          <div style="padding: 10px; font-family: Inter, sans-serif; min-width: 200px;">
+          <div style="padding: 10px; font-family: Inter, sans-serif; min-width: 200px; height: 180px;">
             <div style="font-size: 12px; font-weight: 700; color: #0056b3; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">${event.country}</div>
             <div style="font-size: 13px; font-weight: 600; color: #2c3e50; margin-bottom: 6px;">${event.disease}</div>
             <div style="font-size: 10px; color: #6a7a94; margin-bottom: 6px;">${event.eventType} • ${event.status}</div>

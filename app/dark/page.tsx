@@ -62,7 +62,11 @@ export default function DarkThemePage() {
     console.log("[v0] Dark page whoEvents:", whoEvents ? `${whoEvents.length} events` : "undefined/null")
   }, [whoEvents])
 
-  const safeWhoEvents = whoEvents || []
+  const safeWhoEvents = useMemo(() => {
+    if (!whoEvents) return []
+    if (!Array.isArray(whoEvents)) return []
+    return whoEvents
+  }, [whoEvents])
 
   const [selectedGrades, setSelectedGrades] = useState<string[]>([])
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
@@ -519,11 +523,7 @@ export default function DarkThemePage() {
             <p className="text-[11px] text-[#94a3b8]">Live tracking of graded events in the African region</p>
           </div>
           <div className="flex items-center gap-3">
-            <Link
-              href="/analytics"
-              className="dark-neu-btn-round p-2.5"
-              title="View Analytics"
-            >
+            <Link href="/analytics" className="dark-neu-btn-round p-2.5" title="View Analytics">
               <BarChart3 className="w-5 h-5 text-[#3b82f6]" />
             </Link>
             <NotificationCenter events={filteredEvents} isDark={true} />
@@ -596,10 +596,7 @@ export default function DarkThemePage() {
           </div>
         </div>
 
-        <div
-          className="dark-neu-card overflow-hidden relative"
-          style={{ height: "calc(100vh - 250px)" }}
-        >
+        <div className="dark-neu-card overflow-hidden relative" style={{ height: "calc(100vh - 250px)" }}>
           <MapboxMap
             ref={mapRef}
             events={filteredEvents}

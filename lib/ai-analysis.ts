@@ -4,7 +4,7 @@ import { generateObject, generateText } from "ai"
 import { createAzure } from "@ai-sdk/azure"
 import { z } from "zod"
 import type { WHO_DATA_SOURCES } from "./data-sources"
-import { WHO_SYSTEM_PROMPT, WHO_ANALYSIS_FRAMEWORK } from "./ai-training-prompts"
+import { WHO_SYSTEM_PROMPT } from "./ai-training-prompts"
 
 const azure = createAzure({
   resourceName: "afro-ai-resource",
@@ -49,40 +49,31 @@ const dataSourceMonitoringSchema = z.object({
 })
 
 export async function analyzeOutbreakData(events: any[]) {
-  const { object } = await generateObject({
-    model: afroAI,
-    schema: outbreakAnalysisSchema,
-    prompt: `${WHO_SYSTEM_PROMPT}
+  console.warn("[v0] AI analysis disabled: Azure AFRO-AI model returns spec v3, incompatible with AI SDK 5")
 
-Analyze this outbreak data for WHO African region:
-
-${JSON.stringify(events.slice(0, 5), null, 2)}
-
-${WHO_ANALYSIS_FRAMEWORK}
-
-Provide risk assessment using WHO grading: Grade 3 (critical), Grade 2 (high), Grade 1 (medium), Grade 0 (low).`,
-  })
-
-  return object
+  // Return mock analysis until Azure model is updated to spec v2 or we switch to Vercel AI Gateway
+  return {
+    alertLevel: "medium" as const,
+    riskScore: 50,
+    summary: "AI analysis temporarily unavailable due to model compatibility issues",
+    keyFindings: ["Data analysis in progress"],
+    recommendations: ["Manual review recommended"],
+    affectedCountries: [],
+    trendAnalysis: "Manual analysis required",
+  }
 }
 
 export async function detectAnomalies(events: any[], historicalData?: any[]) {
-  const { object } = await generateObject({
-    model: afroAI,
-    schema: anomalyDetectionSchema,
-    prompt: `${WHO_SYSTEM_PROMPT}
+  console.warn("[v0] AI anomaly detection disabled: Azure AFRO-AI model incompatible with AI SDK 5")
 
-Analyze recent WHO disease events for anomalies:
-
-RECENT EVENTS:
-${JSON.stringify(events.slice(0, 3), null, 2)}
-
-${historicalData ? `HISTORICAL:\n${JSON.stringify(historicalData.slice(0, 2), null, 2)}` : ""}
-
-Look for: spikes >50%, rapid spread, unusual patterns, seasonal anomalies.`,
-  })
-
-  return object
+  return {
+    anomalyDetected: false,
+    anomalyType: "none" as const,
+    severity: "low" as const,
+    description: "AI anomaly detection temporarily unavailable",
+    affectedRegions: [],
+    suggestedAction: "Continue monitoring",
+  }
 }
 
 export async function generateOutbreakReport(events: any[], timeframe: string) {
