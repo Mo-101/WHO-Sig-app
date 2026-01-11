@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
+import { useState, useMemo, useRef } from "react"
 import useSWR from "swr"
 import { Checkbox } from "@/components/ui/checkbox"
 import MapboxMap from "@/components/mapbox-map"
@@ -26,11 +26,10 @@ const fetcher = async (url: string) => {
     throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`)
   }
   const json = await res.json()
-  console.log("[v0] API response received:", {
-    success: json.success,
-    dataLength: json.data?.length,
-    source: json.metadata?.source,
-  })
+
+  if (process.env.NODE_ENV === "development") {
+    console.log("[v0] API response:", json.data?.length || 0, "events from", json.metadata?.source)
+  }
 
   // Handle structured API response
   if (json.success && Array.isArray(json.data)) {
@@ -54,50 +53,23 @@ export default function DashboardPage() {
   } = useSWR("/api/who-data", fetcher, {
     refreshInterval: 300000, // 5 minutes
     revalidateOnFocus: false,
-    onSuccess: (data) => {
-      console.log("[v0] SWR onSuccess - Full API response:", {
-        hasData: !!data,
-        dataType: Array.isArray(data) ? "array" : typeof data,
-        dataKeys: data ? Object.keys(data) : [],
-        dataLength: data?.data?.length || 0,
-        dataArray: Array.isArray(data?.data),
-        firstEvent: data?.data?.[0],
-        metadata: data?.metadata,
-      })
-      console.log("[v0] Data loaded successfully:", data?.data?.length || 0, "events")
-    },
     onError: (err) => {
-      console.error("[v0] SWR Error:", err.message)
+      console.error("[v0] Data fetch error:", err.message)
     },
   })
 
   const whoEvents = useMemo(() => {
-    console.log("[v0] Extracting whoEvents from apiResponse:", {
-      hasApiResponse: !!apiResponse,
-      apiResponseType: typeof apiResponse,
-      isArray: Array.isArray(apiResponse),
-      hasData: !!apiResponse?.data,
-      dataIsArray: Array.isArray(apiResponse?.data),
-      dataLength: apiResponse?.data?.length || 0,
-    })
-
-    if (!apiResponse) {
-      console.log("[v0] No apiResponse available yet")
-      return []
-    }
+    if (!apiResponse) return []
 
     if (Array.isArray(apiResponse.data)) {
-      console.log("[v0] Extracted", apiResponse.data.length, "events from apiResponse.data")
       return apiResponse.data
     }
 
-    // Fallback: check if apiResponse itself is the data array
     if (Array.isArray(apiResponse)) {
-      console.log("[v0] apiResponse is array, using directly:", apiResponse.length, "events")
       return apiResponse
     }
 
-    console.warn("[v0] Could not extract events array, returning empty array")
+    console.warn("[v0] Invalid data format, returning empty array")
     return []
   }, [apiResponse])
 
@@ -184,7 +156,7 @@ export default function DashboardPage() {
   ])
 
   const gradeSummary = useMemo(() => {
-    if (!whoEvents) return { g3: 0, g2: 0, g1: 0, gu: 0 }
+    if (!whoEvents || whoEvents.length === 0) return { g3: 0, g2: 0, g1: 0, gu: 0 }
     const g3 = whoEvents.filter((e: { grade: string }) => e.grade === "Grade 3").length
     const g2 = whoEvents.filter((e: { grade: string }) => e.grade === "Grade 2").length
     const g1 = whoEvents.filter((e: { grade: string }) => e.grade === "Grade 1").length
@@ -212,22 +184,22 @@ export default function DashboardPage() {
     )
   }
 
-  useEffect(() => {
-    if (whoEvents) {
-      console.log("[v0] whoEvents array length:", whoEvents.length)
-      console.log("[v0] Sample event data:", whoEvents[0])
-      console.log("[v0] Grade summary:", {
-        g3: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 3").length,
-        g2: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 2").length,
-        g1: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 1").length,
-        gu: whoEvents.filter((e: { grade: string }) => e.grade === "Ungraded").length,
-      })
-      console.log(
-        "[v0] All event IDs:",
-        whoEvents.map((e: { id: any }) => e.id),
-      )
-    }
-  }, [whoEvents])
+  // useEffect(() => {
+  //   if (whoEvents) {
+  //     console.log("[v0] whoEvents array length:", whoEvents.length)
+  //     console.log("[v0] Sample event data:", whoEvents[0])
+  //     console.log("[v0] Grade summary:", {
+  //       g3: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 3").length,
+  //       g2: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 2").length,
+  //       g1: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 1").length,
+  //       gu: whoEvents.filter((e: { grade: string }) => e.grade === "Ungraded").length,
+  //     })
+  //     console.log(
+  //       "[v0] All event IDs:",
+  //       whoEvents.map((e: { id: any }) => e.id),
+  //     )
+  //   }
+  // }, [whoEvents])
 
   const handleEventClick = (event: any) => {
     setSelectedEventForModal(event)

@@ -323,14 +323,13 @@ let dbInitialized = false
 
 export async function GET() {
   try {
-    console.log("[v0] Environment check:", {
-      hasDataUrl: !!process.env.NEXT_PUBLIC_WHO_DATA_URL,
-      dataUrlLength: process.env.NEXT_PUBLIC_WHO_DATA_URL?.length || 0,
-      nodeEnv: process.env.NODE_ENV,
-    })
+    const isDev = process.env.NODE_ENV === "development"
+
+    if (isDev) {
+      console.log("[v0] Fetching WHO data...")
+    }
 
     if (!dbInitialized) {
-      console.log("[v0] Initializing database...")
       await initializeDatabase()
       dbInitialized = true
     }
@@ -339,15 +338,13 @@ export async function GET() {
     const isValidUrl = dataUrl.includes("/pub?output=xlsx") || dataUrl.includes("/export")
 
     if (!isValidUrl) {
-      console.warn("[v0] Invalid or missing WHO_DATA_URL in production, using static fallback immediately")
+      if (isDev) console.warn("[v0] Invalid data URL, using static fallback")
       const { whoEvents } = await import("@/lib/who-data")
-      console.log(`[v0] Loaded static fallback: ${whoEvents.length} events`)
 
       try {
         await saveWHOEvents(whoEvents)
-        console.log(`[v0] Saved ${whoEvents.length} events to database`)
       } catch (dbError) {
-        console.error("[v0] Database save failed:", dbError)
+        if (isDev) console.error("[v0] Database save failed:", dbError)
       }
 
       return NextResponse.json({
@@ -356,22 +353,20 @@ export async function GET() {
         metadata: {
           totalEvents: whoEvents.length,
           fetchedAt: new Date().toISOString(),
-          source: "static-fallback-production",
+          source: "static-fallback",
           reason: "Invalid or missing data URL",
         },
       })
     }
 
     const lastSync = await getLastSyncMetadata()
-    const shouldRefresh = !lastSync || Date.now() - new Date(lastSync.last_sync_time).getTime() > 5 * 60 * 1000 // 5 minutes
+    const shouldRefresh = !lastSync || Date.now() - new Date(lastSync.last_sync_time).getTime() > 5 * 60 * 1000
 
     if (!shouldRefresh && lastSync?.sync_status === "success") {
-      console.log("[v0] Returning cached data from database")
       const cachedEvents = await getWHOEventsFromDB()
 
-      if (cachedEvents.length === 0) {
-        console.log("[v0] Database is empty, forcing refresh")
-      } else {
+      if (cachedEvents.length > 0) {
+        if (isDev) console.log(`[v0] Using cached data: ${cachedEvents.length} events`)
         return NextResponse.json({
           success: true,
           data: cachedEvents,
@@ -387,9 +382,6 @@ export async function GET() {
 
     dataUrl =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA/pub?output=xlsx"
-    console.log("[v0] Using complete published URL")
-
-    console.log(`[v0] Fetching WHO data from: ${dataUrl}`)
 
     const response = await fetch(dataUrl, {
       headers: {
@@ -401,12 +393,10 @@ export async function GET() {
     })
 
     if (!response.ok) {
-      console.warn(`[v0] Remote fetch returned ${response.status}, using database cache`)
-
       try {
         const dbEvents = await getWHOEventsFromDB()
         if (dbEvents.length > 0) {
-          console.log(`[v0] Retrieved ${dbEvents.length} events from Azure PostgreSQL`)
+          if (isDev) console.log(`[v0] Using database fallback: ${dbEvents.length} events`)
           return NextResponse.json({
             success: true,
             data: dbEvents,
@@ -419,19 +409,17 @@ export async function GET() {
           })
         }
       } catch (dbError) {
-        console.warn("[v0] Database query issue:", dbError)
+        if (isDev) console.warn("[v0] Database query failed:", dbError)
       }
 
       const { whoEvents } = await import("@/lib/who-data")
 
       try {
         await saveWHOEvents(whoEvents)
-        console.log(`[v0] Saved static fallback data to database after error: ${whoEvents.length} events`)
       } catch (dbError) {
-        console.error("[v0] Failed to save static fallback to database:", dbError)
+        console.error("[v0] Failed to save static fallback:", dbError)
       }
 
-      console.warn(`[v0] Using static fallback after all errors: ${whoEvents.length} events`)
       return NextResponse.json({
         success: true,
         data: whoEvents,
@@ -446,13 +434,9 @@ export async function GET() {
     }
 
     const arrayBuffer = await response.arrayBuffer()
-    console.log(`[v0] Downloaded ${arrayBuffer.byteLength} bytes`)
-
     const workbook = XLSX.read(arrayBuffer, { type: "array" })
-    console.log(`[v0] Workbook sheets: ${workbook.SheetNames.join(", ")}`)
 
     const countryLookup = buildCountryLookup(workbook)
-    console.log(`[v0] Loaded ${Object.keys(countryLookup).length} ISO3 country entries from GIS_AdminLevels`)
 
     const allEvents: WHOEvent[] = []
 
@@ -462,11 +446,7 @@ export async function GET() {
     allEvents.push(...parseEisSheet(workbook.Sheets[EIS_SHEET_NAME], countryLookup))
 
     console.log(
-      `[v0] Aggregated events -> PHE:${allEvents.filter((e) => e.eventType === "PHE").length} | Signal:${
-        allEvents.filter((e) => e.eventType === "Signal").length
-      } | RRA:${allEvents.filter((e) => e.eventType === "RRA").length} | EIS:${
-        allEvents.filter((e) => e.eventType === "EIS").length
-      }`,
+      `[v0] Parsed ${allEvents.length} total events from Google Sheets (PHE: ${allEvents.filter((e) => e.eventType === "PHE").length}, Signal: ${allEvents.filter((e) => e.eventType === "Signal").length}, RRA: ${allEvents.filter((e) => e.eventType === "RRA").length}, EIS: ${allEvents.filter((e) => e.eventType === "EIS").length})`,
     )
 
     if (allEvents.length === 0) {
@@ -475,9 +455,9 @@ export async function GET() {
 
     try {
       await saveWHOEvents(allEvents)
-      console.log("[v0] Successfully saved events to PostgreSQL database")
+      if (isDev) console.log("[v0] Saved to database successfully")
     } catch (dbError) {
-      console.error("[v0] Failed to save to database:", dbError)
+      console.error("[v0] Database save error:", dbError)
     }
 
     return NextResponse.json(
@@ -499,12 +479,11 @@ export async function GET() {
       },
     )
   } catch (error) {
-    console.error("[v0] Error in WHO data API route:", error)
+    console.error("[v0] API Error:", error)
 
     try {
       const dbEvents = await getWHOEventsFromDB()
       if (dbEvents.length > 0) {
-        console.warn(`[v0] Using database cache after error: ${dbEvents.length} events`)
         return NextResponse.json({
           success: true,
           data: dbEvents,
@@ -517,7 +496,7 @@ export async function GET() {
         })
       }
     } catch (dbError) {
-      console.error("[v0] Database fallback also failed:", dbError)
+      console.error("[v0] Database fallback failed:", dbError)
     }
 
     try {
@@ -525,12 +504,10 @@ export async function GET() {
 
       try {
         await saveWHOEvents(whoEvents)
-        console.log(`[v0] Saved static fallback data to database after error: ${whoEvents.length} events`)
       } catch (dbError) {
-        console.error("[v0] Failed to save static fallback to database:", dbError)
+        console.error("[v0] Failed to save static fallback:", dbError)
       }
 
-      console.warn(`[v0] Using static fallback after all errors: ${whoEvents.length} events`)
       return NextResponse.json({
         success: true,
         data: whoEvents,
