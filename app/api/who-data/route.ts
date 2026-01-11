@@ -168,14 +168,16 @@ function parseRraSheet(sheet: XLSX.WorkSheet | undefined, lookup: CountryLookup)
 
   rows.forEach((row, index) => {
     const primaryCountry = row.Country?.toString().split(",")[0]?.trim()
-    const iso3 =
-      normalizeIso3(row["ISO_3_CODE"]) || normalizeIso3(primaryCountry || "") || normalizeIso3(row.Country)
+    const iso3 = normalizeIso3(row["ISO_3_CODE"]) || normalizeIso3(primaryCountry || "") || normalizeIso3(row.Country)
     if (!iso3) return
 
     const countryMeta = lookup[iso3]
     const coordinates = determineCoordinates(row, countryMeta)
     const reportDate =
-      parseDate(row.DecisionDate) || parseDate(row.EventCreated) || parseDate(row.FinalizedDate) || new Date().toISOString()
+      parseDate(row.DecisionDate) ||
+      parseDate(row.EventCreated) ||
+      parseDate(row.FinalizedDate) ||
+      new Date().toISOString()
 
     events.push({
       id: `RRA-${row["Event ID"] || index}`,
@@ -241,18 +243,8 @@ function parseEisSheet(sheet: XLSX.WorkSheet | undefined, lookup: CountryLookup)
 }
 
 function determineCoordinates(row: Record<string, any>, meta?: CountryLookup[string]) {
-  const lat =
-    parseNumber(row.lat) ||
-    parseNumber(row.latitude) ||
-    parseNumber(row.Latitude) ||
-    meta?.lat ||
-    0
-  const lon =
-    parseNumber(row.lon) ||
-    parseNumber(row.longitude) ||
-    parseNumber(row.Longitude) ||
-    meta?.lon ||
-    0
+  const lat = parseNumber(row.lat) || parseNumber(row.latitude) || parseNumber(row.Latitude) || meta?.lat || 0
+  const lon = parseNumber(row.lon) || parseNumber(row.longitude) || parseNumber(row.Longitude) || meta?.lon || 0
 
   return { lat, lon }
 }
@@ -331,10 +323,43 @@ let dbInitialized = false
 
 export async function GET() {
   try {
+    console.log("[v0] Environment check:", {
+      hasDataUrl: !!process.env.NEXT_PUBLIC_WHO_DATA_URL,
+      dataUrlLength: process.env.NEXT_PUBLIC_WHO_DATA_URL?.length || 0,
+      nodeEnv: process.env.NODE_ENV,
+    })
+
     if (!dbInitialized) {
       console.log("[v0] Initializing database...")
       await initializeDatabase()
       dbInitialized = true
+    }
+
+    let dataUrl = process.env.NEXT_PUBLIC_WHO_DATA_URL || ""
+    const isValidUrl = dataUrl.includes("/pub?output=xlsx") || dataUrl.includes("/export")
+
+    if (!isValidUrl) {
+      console.warn("[v0] Invalid or missing WHO_DATA_URL in production, using static fallback immediately")
+      const { whoEvents } = await import("@/lib/who-data")
+      console.log(`[v0] Loaded static fallback: ${whoEvents.length} events`)
+
+      try {
+        await saveWHOEvents(whoEvents)
+        console.log(`[v0] Saved ${whoEvents.length} events to database`)
+      } catch (dbError) {
+        console.error("[v0] Database save failed:", dbError)
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: whoEvents,
+        metadata: {
+          totalEvents: whoEvents.length,
+          fetchedAt: new Date().toISOString(),
+          source: "static-fallback-production",
+          reason: "Invalid or missing data URL",
+        },
+      })
     }
 
     const lastSync = await getLastSyncMetadata()
@@ -360,17 +385,9 @@ export async function GET() {
       }
     }
 
-    let dataUrl = process.env.NEXT_PUBLIC_WHO_DATA_URL || ""
-
-    if (
-      !dataUrl ||
-      dataUrl ===
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA"
-    ) {
-      dataUrl =
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA/pub?output=xlsx"
-      console.log("[v0] Using complete published URL")
-    }
+    dataUrl =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vS-8N_ALP4IX8k7sFPRzdeALWNNeYpOMmGpbVC3V-nfAyvHsa0ZB6I2YFgONi4McA/pub?output=xlsx"
+    console.log("[v0] Using complete published URL")
 
     console.log(`[v0] Fetching WHO data from: ${dataUrl}`)
 

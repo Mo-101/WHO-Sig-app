@@ -55,7 +55,16 @@ export default function DashboardPage() {
     refreshInterval: 300000, // 5 minutes
     revalidateOnFocus: false,
     onSuccess: (data) => {
-      console.log("[v0] Data loaded successfully:", data.data?.length, "events")
+      console.log("[v0] SWR onSuccess - Full API response:", {
+        hasData: !!data,
+        dataType: Array.isArray(data) ? "array" : typeof data,
+        dataKeys: data ? Object.keys(data) : [],
+        dataLength: data?.data?.length || 0,
+        dataArray: Array.isArray(data?.data),
+        firstEvent: data?.data?.[0],
+        metadata: data?.metadata,
+      })
+      console.log("[v0] Data loaded successfully:", data?.data?.length || 0, "events")
     },
     onError: (err) => {
       console.error("[v0] SWR Error:", err.message)
@@ -63,8 +72,32 @@ export default function DashboardPage() {
   })
 
   const whoEvents = useMemo(() => {
-    if (!apiResponse) return []
-    if (Array.isArray(apiResponse.data)) return apiResponse.data
+    console.log("[v0] Extracting whoEvents from apiResponse:", {
+      hasApiResponse: !!apiResponse,
+      apiResponseType: typeof apiResponse,
+      isArray: Array.isArray(apiResponse),
+      hasData: !!apiResponse?.data,
+      dataIsArray: Array.isArray(apiResponse?.data),
+      dataLength: apiResponse?.data?.length || 0,
+    })
+
+    if (!apiResponse) {
+      console.log("[v0] No apiResponse available yet")
+      return []
+    }
+
+    if (Array.isArray(apiResponse.data)) {
+      console.log("[v0] Extracted", apiResponse.data.length, "events from apiResponse.data")
+      return apiResponse.data
+    }
+
+    // Fallback: check if apiResponse itself is the data array
+    if (Array.isArray(apiResponse)) {
+      console.log("[v0] apiResponse is array, using directly:", apiResponse.length, "events")
+      return apiResponse
+    }
+
+    console.warn("[v0] Could not extract events array, returning empty array")
     return []
   }, [apiResponse])
 
@@ -189,6 +222,10 @@ export default function DashboardPage() {
         g1: whoEvents.filter((e: { grade: string }) => e.grade === "Grade 1").length,
         gu: whoEvents.filter((e: { grade: string }) => e.grade === "Ungraded").length,
       })
+      console.log(
+        "[v0] All event IDs:",
+        whoEvents.map((e: { id: any }) => e.id),
+      )
     }
   }, [whoEvents])
 
@@ -298,11 +335,27 @@ export default function DashboardPage() {
   }
 
   if (!whoEvents || whoEvents.length === 0) {
+    console.error("[v0] No events to display. Debug info:", {
+      apiResponse,
+      whoEvents,
+      error,
+      isLoading,
+    })
+
     return (
       <div className="h-screen bg-[#EFF2F9] flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-lg">
           <p className="text-lg font-semibold text-[#2c3e50]">No Data Available</p>
           <p className="text-sm text-[#6a7a94] mt-2">No outbreak events found in the database</p>
+          <p className="text-xs text-gray-500 mt-4 font-mono">
+            Debug: Received {apiResponse?.data?.length || 0} events from API
+          </p>
+          <button
+            onClick={handleManualRefresh}
+            className="mt-4 px-6 py-3 neu-btn-primary text-white font-semibold rounded-xl transition-all"
+          >
+            Refresh Data
+          </button>
         </div>
       </div>
     )

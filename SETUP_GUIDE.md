@@ -63,8 +63,7 @@ NEXT_PUBLIC_WHO_DATA_URL=https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/ex
 # Get your free Mapbox token at: https://account.mapbox.com/access-tokens/
 # See .env.local.example for exact variable names and configuration details
 
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
-
+# Map configuration variables (see .env.local.example)
 ```
 
 ---
@@ -316,7 +315,7 @@ The AI will automatically analyze data every 2-5 minutes. Check the browser cons
 3. Add environment variables in Vercel dashboard (see .env.local.example for complete list including map configuration):
    - `AZURE_OPENAI_API_KEY`
    - `NEXT_PUBLIC_WHO_DATA_URL`
-   - `NEXT_PUBLIC_MAPBOX_TOKEN`
+   - Map configuration variables (see .env.local.example)
 4. Deploy
 
 ### Other Platforms:

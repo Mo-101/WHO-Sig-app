@@ -29,8 +29,6 @@ POSTGRES_PASSWORD=your_postgres_password_here
 # Mapbox (for interactive maps)
 # Get free token from https://account.mapbox.com/access-tokens/
 # See .env.local.example for exact variable names and configuration
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.your_mapbox_token_here
-MAPBOX_ACCESS_TOKEN=pk.your_mapbox_token_here
 ```
 
 **Get Your Keys:**
