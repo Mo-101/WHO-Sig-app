@@ -3,7 +3,6 @@
 export async function getMapboxToken() {
   const token = process.env.MAPBOX_ACCESS_TOKEN || ""
 
-  // Return empty string if token is invalid to trigger proper error UI
   if (
     !token ||
     token.trim() === "" ||
@@ -12,7 +11,6 @@ export async function getMapboxToken() {
     token.length < 20 ||
     !token.startsWith("pk.")
   ) {
-    console.error("[v0] Invalid or missing Mapbox token")
     return ""
   }
 
