@@ -24,10 +24,8 @@ AZURE_OPENAI_DEPLOYMENT_NAME="AFRO-AI"
 ### Mapbox (Maps)
 ```bash
 # Get your free token from: https://account.mapbox.com/access-tokens/
-# Configure in environment variables - see .env.local.example for details
+# Configure map settings - see .env.local.example for exact variable names and setup
 # Token must start with 'pk.' and be set with NEXT_PUBLIC_ prefix
-NEXT_PUBLIC_MAPBOX_TOKEN="your-mapbox-token"
-MAPBOX_ACCESS_TOKEN="your-mapbox-token"
 ```
 
 ## Deployment Steps

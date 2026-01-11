@@ -110,13 +110,11 @@ POSTGRES_PASSWORD=your_postgres_password_here
 For map visualization of outbreak locations.
 
 **Required:**
-- `NEXT_PUBLIC_MAPBOX_TOKEN` - Your Mapbox public access token
-- `MAPBOX_ACCESS_TOKEN` - Same token (for server-side usage)
+- Map access tokens for visualization
 
 **Configuration:**
 ```bash
-NEXT_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...your_token_here
-MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
+# See .env.local.example for exact variable names and configuration
 ```
 
 **How to get Mapbox token:**
@@ -124,13 +122,13 @@ MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
 2. Create an account or sign in
 3. Go to "Access tokens"
 4. Create a new token or use the default public token
-5. Add to environment variables as shown in .env.local.example
+5. Configure in environment variables - see .env.local.example for exact setup
 
 **Note:** Mapbox tokens are public and meant for client-side use.
 
 **Issue: "Mapbox map not loading"**
 - Get a free token from [mapbox.com](https://account.mapbox.com/access-tokens/)
-- Add to environment variables as shown in .env.local.example
+- Configure as shown in .env.local.example
 - Check token is valid and not expired
 - Verify token has proper scopes enabled
 
@@ -176,8 +174,7 @@ MAPBOX_ACCESS_TOKEN=pk.eyJ1...your_token_here
    - `POSTGRES_DATABASE`
    - `POSTGRES_USER`
    - `POSTGRES_PASSWORD`
-   - `NEXT_PUBLIC_MAPBOX_TOKEN`
-   - `MAPBOX_ACCESS_TOKEN`
+   - Map tokens (see .env.local.example)
 
 4. Redeploy your application
 
