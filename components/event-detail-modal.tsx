@@ -5,7 +5,7 @@ import { X, MapPin, Calendar, Activity, AlertTriangle, Users, FileText } from "l
 import type { WHOEvent } from "@/lib/who-data"
 
 interface EventDetailModalProps {
-  event: WHOEvent
+  event: WHOEvent & { source?: string }
   relatedEvents: WHOEvent[]
   onClose: () => void
   onJumpToLocation: (event: WHOEvent) => void
@@ -164,6 +164,12 @@ export function EventDetailModal({ event, relatedEvents, onClose, onJumpToLocati
                     <span className="text-xs text-[#6a7a94] uppercase">Report Date</span>
                     <span className="text-sm font-semibold text-[#2c3e50]">
                       {new Date(event.reportDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-[#d1d9e6]">
+                    <span className="text-xs text-[#6a7a94] uppercase">Data Source</span>
+                    <span className="text-sm font-semibold text-[#009edb]">
+                      {event.source || 'Google Sheets'}
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-[#d1d9e6]">

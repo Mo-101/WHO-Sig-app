@@ -20,30 +20,49 @@ import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import type { MapboxMapRef } from "@/components/mapbox-map"
 import { analyzeOutbreakData, detectAnomalies } from "@/lib/ai-analysis"
+import { RecentSignals } from "@/components/recent-signals"
+import { AutoDetectionPopup } from "@/components/auto-detection-popup"
+import { useBackendSignals } from "@/hooks/use-backend-signals"
+import { MapErrorBoundary } from "@/components/map-error-boundary"
 
-const fetcher = (url: string) =>
-  fetch(url)
-    .then((res) => res.json())
-    .then((json) => {
-      console.log("[v0] Dark page API response:", json)
-      // Handle structured API response
-      if (json.success && json.data) {
-        return Array.isArray(json.data) ? json.data : []
-      }
-      // Handle direct array response (legacy)
-      if (Array.isArray(json)) {
-        return json
-      }
-      // Fallback to empty array
-      console.warn("[v0] Unexpected API response format, returning empty array")
-      return []
-    })
-    .catch((error) => {
-      console.error("[v0] Fetch error:", error)
-      return [] // Return empty array on error
-    })
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch: ${res.status} ${res.statusText}`)
+  }
+  const json = await res.json()
+
+  // Handle structured API response
+  if (json.success && Array.isArray(json.data)) {
+    return json
+  }
+
+  // Fallback for legacy response format
+  if (Array.isArray(json)) {
+    return { success: true, data: json, metadata: { source: "legacy" } }
+  }
+
+  throw new Error("Invalid API response format")
+}
 
 export default function DarkThemePage() {
+  const [backendDetections, setBackendDetections] = useState<any[]>([])
+  const [showAutoPopups, setShowAutoPopups] = useState(true)
+  const [selectedGrades, setSelectedGrades] = useState<string[]>([])
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+  const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
+  const [selectedYear, setSelectedYear] = useState<number>(2025)
+  const [alerts, setAlerts] = useState<any[]>([])
+  const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
+  const mapRef = useRef<MapboxMapRef>(null)
+  const [startDate, setStartDate] = useState("2025-12-01")
+  const [endDate, setEndDate] = useState("2025-12-31")
+  const [searchFilteredEvents, setSearchFilteredEvents] = useState<any[]>([])
+  const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
+  const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
+  const { backendSignals, backendLoading } = useBackendSignals();
+
   const {
     data: whoEvents,
     error,
@@ -67,20 +86,6 @@ export default function DarkThemePage() {
     if (!Array.isArray(whoEvents)) return []
     return whoEvents
   }, [whoEvents])
-
-  const [selectedGrades, setSelectedGrades] = useState<string[]>([])
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
-  const [selectedDiseases, setSelectedDiseases] = useState<string[]>([])
-  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([])
-  const [selectedYear, setSelectedYear] = useState<number>(2025)
-  const [alerts, setAlerts] = useState<any[]>([])
-  const [selectedAlertCountries, setSelectedAlertCountries] = useState<string[]>([])
-  const mapRef = useRef<MapboxMapRef>(null)
-  const [selectedMapEvent, setSelectedMapEvent] = useState<any | null>(null)
-  const [startDate, setStartDate] = useState("2025-12-01")
-  const [endDate, setEndDate] = useState("2025-12-31")
-  const [searchFilteredEvents, setSearchFilteredEvents] = useState<any[]>([])
-  const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
   const uniqueCountries = useMemo(
@@ -597,19 +602,53 @@ export default function DarkThemePage() {
         </div>
 
         <div className="dark-neu-card overflow-hidden relative" style={{ height: "calc(100vh - 250px)" }}>
-          <MapboxMap
-            ref={mapRef}
-            events={filteredEvents}
-            mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf"
-            selectedEvent={selectedMapEvent}
-            setSelectedEvent={setSelectedMapEvent}
-          />
+          <MapErrorBoundary>
+            <MapboxMap
+              ref={mapRef}
+              events={filteredEvents}
+              mapStyle="mapbox://styles/akanimo1/cmj2p5vsl006401s5d32ofmnf"
+              selectedEvent={selectedMapEvent}
+              setSelectedEvent={setSelectedMapEvent}
+            />
+          </MapErrorBoundary>
         </div>
       </main>
 
+      {/* Auto Detection Popups from Backend */}
+      {showAutoPopups && backendDetections.map((detection) => (
+        <AutoDetectionPopup
+          key={detection.id}
+          detection={detection}
+          onDismiss={() => setBackendDetections((prev) => prev.filter((d) => d.id !== detection.id))}
+          onViewDetails={() => setSelectedMapEvent(detection)}
+        />
+      ))}
+
       <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] dark-glass rounded-2xl shadow-2xl p-4 overflow-hidden flex flex-col z-20 right-sidebar border border-white/10 custom-scrollbar-dark">
+        <RecentSignals 
+          signals={backendSignals} 
+          isLoading={backendLoading}
+          onSignalClick={(signal) => {
+            handleEventClick({
+              id: signal.id.toString(),
+              country: signal.raw?.country || 'Unknown',
+              disease: signal.text,
+              grade: signal.raw?.grade || 'Ungraded',
+              eventType: 'Backend Signal',
+              status: 'Active',
+              description: signal.text,
+              lat: signal.raw?.lat || 0,
+              lon: signal.raw?.lon || 0,
+              reportDate: signal.created_at,
+              source: signal.source
+            })
+          }}
+        />
+
+        <hr className="my-4 border-[#334155]" />
+
         <h3 className="text-xs font-bold text-[#3b82f6] uppercase tracking-wide mb-3 pb-2 border-b-2 border-[#334155] flex items-center gap-2">
-          <span className="text-base">📡</span> Recent Signals
+          <span className="text-base">📍</span> Country Signals
         </h3>
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
           {filteredEvents.slice(0, 20).map((event, idx) => (
@@ -635,7 +674,7 @@ export default function DarkThemePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-[#3b82f6] uppercase truncate">{event.country}</div>
-                  <div className="text-[10px] text-[#94a3b8]">#{idx + 1}</div>
+                  <div className="text-[9px] text-[#94a3b8]">📊 Google Sheets</div>
                 </div>
               </div>
               <div className="text-xs font-semibold text-[#e2e8f0] mb-1">{event.disease}</div>
