@@ -22,6 +22,7 @@ import type { WHOEvent } from "@/lib/who-data"
 import { RecentSignals } from "@/components/recent-signals"
 import { AutoDetectionPopup } from "@/components/auto-detection-popup"
 import { useBackendSignals } from "@/hooks/use-backend-signals"
+import { MapErrorBoundary } from "@/components/map-error-boundary"
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -618,12 +619,14 @@ export default function DashboardPage() {
         </div>
 
         <div className="neu-panel overflow-hidden relative flex-1">
-          <MapboxMap
-            ref={mapRef}
-            events={filteredEvents}
-            selectedEvent={selectedMapEvent}
-            setSelectedEvent={setSelectedMapEvent}
-          />
+          <MapErrorBoundary>
+            <MapboxMap
+              ref={mapRef}
+              events={filteredEvents}
+              selectedEvent={selectedMapEvent}
+              setSelectedEvent={setSelectedMapEvent}
+            />
+          </MapErrorBoundary>
         </div>
       </main>
 
@@ -649,10 +652,6 @@ export default function DashboardPage() {
           }}
         />
 
-        <hr className="my-4 border-gray-200" />
-        <h3 className="text-xs font-bold text-[#1010ee] uppercase tracking-wide mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
-          <span className="text-base">📡</span> Recent Signals
-        </h3>
         <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
           {filteredEvents.slice(0, 20).map((event: any, idx: number) => (
             <div
