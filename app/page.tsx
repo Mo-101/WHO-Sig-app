@@ -19,6 +19,9 @@ import { BarChart3, AlertTriangle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { analyzeOutbreakData, detectAnomalies } from "@/lib/ai-analysis"
 import type { WHOEvent } from "@/lib/who-data"
+import { RecentSignals } from "@/components/recent-signals"
+import { AutoDetectionPopup } from "@/components/auto-detection-popup"
+import { useBackendSignals } from "@/hooks/use-backend-signals"
 
 const fetcher = async (url: string) => {
   const res = await fetch(url)
@@ -87,6 +90,11 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState("2025-12-31")
   const [searchFilteredEvents, setSearchFilteredEvents] = useState<any[]>([])
   const [selectedEventForModal, setSelectedEventForModal] = useState<any | null>(null)
+  const [backendDetections, setBackendDetections] = useState<any[]>([])
+  const [showAutoPopups, setShowAutoPopups] = useState(true)
+
+  // Fetch backend signals
+  const { signals: backendSignals, isLoading: backendLoading } = useBackendSignals(10)
 
   const uniqueGrades = useMemo(() => ["Grade 3", "Grade 2", "Grade 1", "Ungraded"], [])
   const uniqueCountries: string[] = useMemo(() => {
@@ -335,6 +343,16 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen" style={{ background: "#EFF2F9" }}>
+      {/* Auto Detection Popups from Backend */}
+      {showAutoPopups && backendDetections.map((detection) => (
+        <AutoDetectionPopup
+          key={detection.id}
+          detection={detection}
+          onDismiss={() => setBackendDetections((prev) => prev.filter((d) => d.id !== detection.id))}
+          onViewDetails={() => setSelectedEventForModal(detection)}
+        />
+      ))}
+
       {/* AI Alert Popups */}
       {alerts.map((alert) => (
         <AIAlertPopup
@@ -611,6 +629,27 @@ export default function DashboardPage() {
 
       {/* Right Sidebar */}
       <aside className="fixed right-2.5 top-2.5 bottom-2.5 w-[280px] neu-panel p-4 overflow-hidden flex flex-col z-20 right-sidebar custom-scrollbar">
+        <RecentSignals 
+          signals={backendSignals} 
+          isLoading={backendLoading}
+          onSignalClick={(signal) => {
+            handleEventClick({
+              id: signal.id.toString(),
+              country: signal.raw?.country || 'Unknown',
+              disease: signal.text,
+              grade: signal.raw?.grade || 'Ungraded',
+              eventType: 'Backend Signal',
+              status: 'Active',
+              description: signal.text,
+              lat: signal.raw?.lat || 0,
+              lon: signal.raw?.lon || 0,
+              reportDate: signal.created_at,
+              source: signal.source
+            })
+          }}
+        />
+
+        <hr className="my-4 border-gray-200" />
         <h3 className="text-xs font-bold text-[#1010ee] uppercase tracking-wide mb-3 pb-2 border-b border-gray-200 flex items-center gap-2">
           <span className="text-base">📡</span> Recent Signals
         </h3>

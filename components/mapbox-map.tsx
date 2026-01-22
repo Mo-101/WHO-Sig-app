@@ -65,6 +65,11 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
           mapboxgl.accessToken = token
 
+          if (!token || token.trim() === "") {
+            setError("Mapbox token is not configured. Please set MAPBOX_ACCESS_TOKEN environment variable.")
+            return
+          }
+
           if (!map.current) {
             map.current = new mapboxgl.Map({
               container: mapContainer.current,
@@ -81,10 +86,13 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(
 
             map.current.on("error", (e: any) => {
               console.error("[v0] Mapbox error:", e)
-              mapboxgl.accessToken = ""
 
               if (e.error && e.error.message && e.error.message.includes("token")) {
                 setError("Invalid Mapbox token. Please verify your MAPBOX_ACCESS_TOKEN is correct.")
+                if (map.current) {
+                  map.current.remove()
+                  map.current = null
+                }
               } else {
                 setError("Failed to load map. Please check your network connection.")
               }
